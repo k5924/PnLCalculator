@@ -1,0 +1,6 @@
+rootProject.name = 'PnLCalculator'
+include('reader',
+        'engine',
+        'shared',
+        'cli')
+

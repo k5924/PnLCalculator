@@ -1,0 +1,10 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="ReaderMain" type="Application" factoryName="Application" nameIsGenerated="true">
+    <option name="MAIN_CLASS_NAME" value="ReaderMain" />
+    <module name="PnLCalculator.reader.main" />
+    <option name="PROGRAM_PARAMETERS" value="&quot;reader/src/main/resources/sample_trades (3).csv&quot;" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>

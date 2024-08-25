@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="d4cbb71b-800e-44fc-ac55-d78e368a6dbc" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/gradle.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/runConfigurations/ReaderMain.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/uiDesigner.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/build.gradle" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/gradle/wrapper/gradle-wrapper.jar" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/gradle/wrapper/gradle-wrapper.properties" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/gradlew" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/gradlew.bat" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/reader/src/main/java/Account.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/reader/src/main/java/Action.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/reader/src/main/java/Cli.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/reader/src/main/java/CsvReader.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/reader/src/main/java/Currency.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/reader/src/main/java/LineProcessor.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/reader/src/main/java/Portfolio.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/reader/src/main/java/ReaderMain.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/reader/src/main/java/Side.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/reader/src/main/java/Stock.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/reader/src/main/java/Strategy.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/reader/src/main/java/Trade.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/reader/src/main/java/User.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/reader/src/main/java/UserStore.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/reader/src/main/resources/log4j2.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/settings.gradle" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ExternalProjectsData">
+    <projectState path="$PROJECT_DIR$">
+      <ProjectState />
+    </projectState>
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Enum" />
+        <option value="Record" />
+        <option value="Class" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="MarkdownSettingsMigration">
+    <option name="stateVersion" value="1" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 3
+}</component>
+  <component name="ProjectId" id="2l6re86tzQhRz9BGkAjSko2MBBk" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Gradle.PnLCalculator [:ReaderMain.main()].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.PnLCalculator:reader [:reader:ReaderMain.main()].executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;jdk.selected.JAVA_MODULE&quot;: &quot;temurin-21&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/home/tr1x/Documents/Learning/programming/PnLCalculator/engine/src/main/resources&quot;
+  }
+}</component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/engine/src/main/resources" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/reader/src/main/java" />
+      <recent name="$PROJECT_DIR$/reader/src/main/resources" />
+      <recent name="$PROJECT_DIR$/src/main/resources" />
+    </key>
+    <key name="MoveClassesOrPackagesDialog.RECENTS_KEY">
+      <recent name="" />
+    </key>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="jdk-21.0.1-temurin-21.0.1-e1d2075fd9a7-3a0c0fb7" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="d4cbb71b-800e-44fc-ac55-d78e368a6dbc" name="Changes" comment="" />
+      <created>1724511468673</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1724511468673</updated>
+    </task>
+    <servers />
+  </component>
+</project>
