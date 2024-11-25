@@ -1,17 +1,19 @@
 package org.example.shared;
 
-public enum Action {
-    NEW,
-    AMEND,
-    CANCEL;
+import java.util.Arrays;
 
-    public static Action from(final String actionString) {
-        if (NEW.toString().equals(actionString)) {
-            return NEW;
-        } else if (AMEND.toString().equals(actionString)) {
-            return AMEND;
-        } else {
-            return CANCEL;
-        }
+public enum Action {
+    NEW(new byte[]{'N', 'E', 'W'}),
+    AMEND(new byte[]{'A', 'M', 'E', 'N', 'D'}),
+    CANCEL(new byte[]{'C', 'A', 'N', 'C', 'E', 'L'});
+
+    private final byte[] encoding;
+
+    Action(final byte[] encoding) {
+        this.encoding = encoding;
+    }
+
+    public boolean matches(final byte[] input) {
+        return Arrays.equals(input, encoding);
     }
 }

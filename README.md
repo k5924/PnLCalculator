@@ -10,7 +10,7 @@ Given a CSV with simplified trade data, calculate and display PnL in USD
   - org.example.engine.Portfolio
   - org.example.engine.Strategy
   - org.example.engine.User
-  - org.example.shared.Currency
+  - org.example.shared.org.example.shared.Currency
 
 # Things to keep in mind:
 - The same BBGCode may occur in different currencies. Convert all amounts to USD using static conversion rates

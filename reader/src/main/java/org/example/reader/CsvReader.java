@@ -1,98 +1,53 @@
 package org.example.reader;
 
-import org.example.engine.UserStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.RandomAccessFile;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
 
-final class CsvReader {
+public final class CsvReader {
 
     private static final Logger LOG = LoggerFactory.getLogger(CsvReader.class);
-    private static final int BATCH_SIZE = 1000;
-    private static final int MAX_STRING_LENGTH = 256;
 
-    public static void readCsvFile(final String filePath, final UserStore userStore)
-    {
-        final ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
-        final List<CompletableFuture<?>> futures = new ArrayList<>();
-        try (final FileChannel fileChannel = new RandomAccessFile(Paths.get(filePath).toAbsolutePath().toString(), "r")
-                .getChannel()) {
-            final MappedByteBuffer buffer = fileChannel.map(FileChannel.MapMode.READ_ONLY, 0,
-                    fileChannel.size());
-            final StringBuilder line = new StringBuilder(MAX_STRING_LENGTH);
-            boolean skipFirstLine = true;
-            final List<String> batch = new ArrayList<>(BATCH_SIZE);
-            for (int i = 0; i < fileChannel.size(); i++) {
-                final char character = (char) buffer.get();
+    public static void readFile(final String path) {
+        try (RandomAccessFile raf = new RandomAccessFile(path, "r");
+             FileChannel fc = raf.getChannel()) {
 
-                if (character == '\n' || character == '\r') {
-                    if (character == '\r' && buffer.get(i + 1) == '\n') {
-                        i++;
+            final MappedByteBuffer buffer = fc.map(FileChannel.MapMode.READ_ONLY, 0, fc.size());
+            final int[] wordPositions = new int[13];
+            int startOfLine = 0;
+            int currentWordPos = 0;
+            boolean shouldProcess = false;
+            for (int i = 0; i < buffer.limit(); i++) {
+                final byte b = buffer.get();
+                if (b == '\n') {
+                    if (shouldProcess) {
+                        final int endOfLine = i - 1;
+                        final int length = endOfLine - startOfLine;
+                        final MappedByteBuffer bufferSlice = buffer.slice(startOfLine, length);
+                        LineProcessor.process(bufferSlice, wordPositions);
                     }
-                    if (!line.isEmpty() && skipFirstLine) {
-                        skipFirstLine = false;
-                        line.setLength(0);
-                        continue;
-                    }
-
-                    if (!line.isEmpty()) {
-                        batch.add(line.toString());
-                        if (batch.size() > BATCH_SIZE) {
-                            submitBatch(batch, userStore, futures, executorService);
-                        }
-                        line.setLength(0);
-                    }
-                } else {
-                    line.append(character);
+                    Arrays.fill(wordPositions, 0);
+                    currentWordPos = 0;
+                    startOfLine = i + 1;
+                    wordPositions[currentWordPos++] = (i + 1) - startOfLine;
+                    shouldProcess = true;
+                }
+                if (b == ',' && shouldProcess) {
+                    wordPositions[currentWordPos++] = (i + 1) - startOfLine;
                 }
             }
-            if (!line.isEmpty()) {
-                batch.add(line.toString());
-            }
+            final int endOfLine = buffer.limit();
+            final int length = endOfLine - startOfLine;
+            final MappedByteBuffer bufferSlice = buffer.slice(startOfLine, length);
+            LineProcessor.process(bufferSlice, wordPositions);
+            Arrays.fill(wordPositions, 0);
 
-            if (!batch.isEmpty()) {
-                submitBatch(batch, userStore, futures, executorService);
-            }
         } catch (final Exception e) {
-            LOG.error("error when trying to read file: ", e);
-        } finally {
-            final CompletableFuture<Void> allOf = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
-            allOf.join();
-
-            executorService.shutdown();
-            try {
-                if (!executorService.awaitTermination(60, TimeUnit.SECONDS)) {
-                    executorService.shutdownNow();
-                }
-            } catch (InterruptedException e) {
-                executorService.shutdownNow();
-            }
+            e.printStackTrace();
         }
-    }
-
-    private static void submitBatch(final List<String> batch,
-                                    final UserStore userStore,
-                                    final List<CompletableFuture<?>> futures,
-                                    final ExecutorService executorService) {
-        final List<String> currentBatch = new ArrayList<>(batch);
-        batch.clear();
-
-        final CompletableFuture<?> future = CompletableFuture.runAsync(() -> {
-            for (final String line : currentBatch) {
-                LineProcessor.processLine(line, userStore);
-            }
-        }, executorService);
-
-        futures.add(future);
     }
 }

@@ -1,52 +1,93 @@
 package org.example.reader;
 
-import org.example.engine.UserStore;
 import org.example.shared.Action;
 import org.example.shared.Currency;
 import org.example.shared.Side;
-import org.example.shared.Trade;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
+import java.math.BigDecimal;
+import java.nio.MappedByteBuffer;
+import java.nio.charset.StandardCharsets;
 
-final class LineProcessor {
+public final class LineProcessor {
 
     private static final Logger LOG = LoggerFactory.getLogger(LineProcessor.class);
 
-    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
+    public static void process(final MappedByteBuffer bufferSlice, final int[] wordStartPositions) {
+        final String tradeId = extractString(bufferSlice, wordStartPositions[0], wordStartPositions[1] - 1);
+        final String bggCode = extractString(bufferSlice, wordStartPositions[1], wordStartPositions[2] - 1);
+        final Currency currency = extractCurrency(bufferSlice, wordStartPositions[2], wordStartPositions[3] - 1);
+        final Side side = extractSide(bufferSlice, wordStartPositions[3]);
+        final BigDecimal price = extractPrice(bufferSlice, wordStartPositions[4], wordStartPositions[5] - 1);
+        final int volume = extractVolume(bufferSlice, wordStartPositions[5], wordStartPositions[6] - 1);
+        final String portfolio = extractString(bufferSlice, wordStartPositions[6], wordStartPositions[7] - 1);
+        final Action action = extractAction(bufferSlice, wordStartPositions[7], wordStartPositions[8] - 1);
+        final String account = extractString(bufferSlice, wordStartPositions[8], wordStartPositions[9] - 1);
+        final String strategy = extractString(bufferSlice, wordStartPositions[9], wordStartPositions[10] - 1);
+        final String user = extractString(bufferSlice, wordStartPositions[10], wordStartPositions[11] - 1);
+        final String tradeTime = extractString(bufferSlice, wordStartPositions[11], wordStartPositions[12] - 1);
+        final String valueDate = extractString(bufferSlice, wordStartPositions[12], bufferSlice.limit());
+    }
 
-    public static void processLine(final String lineToProcess, final UserStore userStore) {
-        final String[] lineParts = lineToProcess.split(",", 13);
-        if (lineParts.length != 13) {
-            LOG.warn("Invalid line format: {}", lineToProcess);
-            return;
+    private static String extractString(final MappedByteBuffer buffer, final int start, final int end) {
+        final int length = end - start;
+        final byte[] temp = new byte[length];
+        buffer.position(start);
+        buffer.get(temp, 0, length);
+        return new String(temp, StandardCharsets.US_ASCII);
+    }
+
+    private static Currency extractCurrency(final MappedByteBuffer buffer, final int start, final int end) {
+        final int length = end - start;
+        final byte[] temp = new byte[length];
+        buffer.position(start);
+        buffer.get(temp, 0, length);
+        for (final Currency currency : Currency.values()) {
+            if (currency.matches(temp)) {
+                return currency;
+            }
         }
+        throw new IllegalArgumentException("Unknown currency encoding in buffer");
+    }
 
-        try {
-            final String tradeId = lineParts[0];
-            final String bbgCode = lineParts[1];
-            final Currency currency = Currency.from(lineParts[2]);
-            final Side side = Side.from(lineParts[3]);
-            final double price = Double.parseDouble(lineParts[4]);
-            final int volume = Integer.parseInt(lineParts[5]);
-            final String portfolio = lineParts[6];
-            final Action action = Action.from(lineParts[7]);
-            final String account = lineParts[8];
-            final String strategy = lineParts[9];
-            final String user = lineParts[10];
-            final LocalDateTime dateTime = LocalDateTime.parse(lineParts[11], DATE_TIME_FORMATTER);
-            final long timeInMs = dateTime.toInstant(ZoneOffset.UTC).toEpochMilli();
-
-            final Trade trade = new Trade(tradeId, currency, side, price, volume, action, timeInMs);
-            userStore.registerTrade(trade, user, account, portfolio, strategy, bbgCode);
-        } catch (NumberFormatException | DateTimeParseException e) {
-            LOG.warn("Unable to convert fields in line to object: {} {}", lineToProcess, e.getMessage());
-        } catch (IllegalArgumentException e) {
-            LOG.warn("Invalid value in line fields: {} {}", lineToProcess, e.getMessage());
+    private static Side extractSide(final MappedByteBuffer buffer, final int start) {
+        buffer.position(start);
+        final byte c = buffer.get();
+        for (final Side side : Side.values()) {
+            if (side.matches(c)) {
+                return side;
+            }
         }
+        throw new IllegalArgumentException("Unknown side encoding in buffer");
+    }
+
+    private static BigDecimal extractPrice(final MappedByteBuffer buffer, final int start, final int end) {
+        final int length = end - start;
+        final byte[] temp = new byte[length];
+        buffer.position(start);
+        buffer.get(temp, 0, length);
+        return new BigDecimal(new String(temp, StandardCharsets.US_ASCII));
+    }
+
+    private static int extractVolume(final MappedByteBuffer buffer, final int start, final int end) {
+        final int length = end - start;
+        final byte[] temp = new byte[length];
+        buffer.position(start);
+        buffer.get(temp, 0, length);
+        return Integer.parseInt(new String(temp, StandardCharsets.US_ASCII));
+    }
+
+    private static Action extractAction(final MappedByteBuffer buffer, final int start, final int end) {
+        final int length = end - start;
+        final byte[] temp = new byte[length];
+        buffer.position(start);
+        buffer.get(temp, 0, length);
+        for (final Action action : Action.values()) {
+            if (action.matches(temp)) {
+                return action;
+            }
+        }
+        throw new IllegalArgumentException("Unknown action encoding in buffer");
     }
 }

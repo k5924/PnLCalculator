@@ -1,24 +1,25 @@
 package org.example.shared;
 
 public enum Side {
-    B,
-    S;
+    B('B'),
+    S('S');
 
-    public static Side from(final String sideString) {
-        if (B.toString().equals(sideString)) {
-            return B;
-        } else if (S.toString().equals(sideString)) {
-            return S;
-        } else {
-            throw new IllegalArgumentException(sideString + " is not supported");
-        }
+    private final byte encoding;
+
+    Side(final char encoding) {
+        this.encoding = (byte) encoding;
     }
 
-    public static int conversion(final Side side) {
-        if (side.equals(B)) {
-            return -1;
-        } else {
-            return 1;
+    public boolean matches(final byte input) {
+        return this.encoding == input;
+    }
+
+    public static Side fromByte(final byte input) {
+        for (Side side : values()) {
+            if (side.matches(input)) {
+                return side;
+            }
         }
+        throw new IllegalArgumentException("Unknown Side for byte: " + (char) input);
     }
 }
