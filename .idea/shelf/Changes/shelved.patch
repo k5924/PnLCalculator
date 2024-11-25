@@ -1,0 +1,1302 @@
+Index: engine/src/main/java/org/example/engine/Account.java
+===================================================================
+diff --git a/engine/src/main/java/org/example/engine/Account.java b/engine/src/main/java/org/example/engine/Account.java
+deleted file mode 100644
+--- a/engine/src/main/java/org/example/engine/Account.java	(revision e187040cca3e60bfcff04b95ec0113dffb9d9921)
++++ /dev/null	(revision e187040cca3e60bfcff04b95ec0113dffb9d9921)
+@@ -1,56 +0,0 @@
+-package org.example.engine;
+-
+-import org.example.shared.Trade;
+-import org.slf4j.Logger;
+-import org.slf4j.LoggerFactory;
+-
+-import java.util.Map;
+-import java.util.concurrent.ConcurrentHashMap;
+-import java.util.concurrent.atomic.DoubleAdder;
+-
+-final class Account {
+-
+-    private static final Logger LOG = LoggerFactory.getLogger(Account.class);
+-
+-    private final ConcurrentHashMap<String, Portfolio> portfolioMap = new ConcurrentHashMap<>();
+-
+-    public void registerTrade(final Trade trade, final String portfolioString, final String strategyString,
+-                              final String bbgCode) {
+-        final Portfolio portfolio = portfolioMap.computeIfAbsent(portfolioString, key -> {
+-            if (LOG.isDebugEnabled()) {
+-                LOG.debug("creating new portfolio for trade {}", trade);
+-            }
+-            return new Portfolio();
+-        });
+-        portfolio.registerTrade(trade, strategyString, bbgCode);
+-    }
+-
+-    public double getPnL() {
+-        final DoubleAdder pnL = new DoubleAdder();
+-        for (final Map.Entry<String, Portfolio> entry : portfolioMap.entrySet()) {
+-            final double portfolioPnL = entry.getValue().getPnL();
+-            if (LOG.isDebugEnabled()) {
+-                LOG.debug("[portfolio={},PnL={}]", entry.getKey(), portfolioPnL);
+-            }
+-            pnL.add(portfolioPnL);
+-        }
+-        return pnL.sum();
+-    }
+-
+-    @Override
+-    public String toString() {
+-        final StringBuilder sb = new StringBuilder();
+-        sb.append("org.example.engine.Account=[");
+-        for (final Map.Entry<String, Portfolio> entry : portfolioMap.entrySet()) {
+-            sb.append("portfolio=[");
+-            sb.append(entry.getKey());
+-            sb.append(",");
+-            sb.append(entry.getValue());
+-            sb.append(",total PnL=");
+-            sb.append(entry.getValue().getPnL());
+-            sb.append("]");
+-        }
+-        sb.append("]");
+-        return sb.toString();
+-    }
+-}
+Index: shared/src/main/java/org/example/shared/Action.java
+===================================================================
+diff --git a/shared/src/main/java/org/example/shared/Action.java b/shared/src/main/java/org/example/shared/Action.java
+deleted file mode 100644
+--- a/shared/src/main/java/org/example/shared/Action.java	(revision e187040cca3e60bfcff04b95ec0113dffb9d9921)
++++ /dev/null	(revision e187040cca3e60bfcff04b95ec0113dffb9d9921)
+@@ -1,17 +0,0 @@
+-package org.example.shared;
+-
+-public enum Action {
+-    NEW,
+-    AMEND,
+-    CANCEL;
+-
+-    public static Action from(final String actionString) {
+-        if (NEW.toString().equals(actionString)) {
+-            return NEW;
+-        } else if (AMEND.toString().equals(actionString)) {
+-            return AMEND;
+-        } else {
+-            return CANCEL;
+-        }
+-    }
+-}
+Index: cli/build.gradle
+===================================================================
+diff --git a/cli/build.gradle b/cli/build.gradle
+deleted file mode 100644
+--- a/cli/build.gradle	(revision e187040cca3e60bfcff04b95ec0113dffb9d9921)
++++ /dev/null	(revision e187040cca3e60bfcff04b95ec0113dffb9d9921)
+@@ -1,21 +0,0 @@
+-plugins {
+-    id 'java'
+-}
+-
+-group = 'org.example'
+-version = '1.0-SNAPSHOT'
+-
+-repositories {
+-    mavenCentral()
+-}
+-
+-dependencies {
+-    implementation project(":shared")
+-    implementation project(":engine")
+-    testImplementation platform('org.junit:junit-bom:5.9.1')
+-    testImplementation 'org.junit.jupiter:junit-jupiter'
+-}
+-
+-test {
+-    useJUnitPlatform()
+-}
+\ No newline at end of file
+Index: engine/build.gradle
+===================================================================
+diff --git a/engine/build.gradle b/engine/build.gradle
+deleted file mode 100644
+--- a/engine/build.gradle	(revision e187040cca3e60bfcff04b95ec0113dffb9d9921)
++++ /dev/null	(revision e187040cca3e60bfcff04b95ec0113dffb9d9921)
+@@ -1,23 +0,0 @@
+-plugins {
+-    id 'java'
+-}
+-
+-group = 'org.example'
+-version = '1.0-SNAPSHOT'
+-
+-repositories {
+-    mavenCentral()
+-}
+-
+-dependencies {
+-    implementation project(":shared")
+-    implementation 'org.apache.logging.log4j:log4j-api:2.20.0'
+-    implementation 'org.apache.logging.log4j:log4j-core:2.20.0'
+-    implementation 'org.apache.logging.log4j:log4j-slf4j-impl:2.20.0'
+-    testImplementation platform('org.junit:junit-bom:5.9.1')
+-    testImplementation 'org.junit.jupiter:junit-jupiter'
+-}
+-
+-test {
+-    useJUnitPlatform()
+-}
+\ No newline at end of file
+Index: shared/build.gradle
+===================================================================
+diff --git a/shared/build.gradle b/shared/build.gradle
+deleted file mode 100644
+--- a/shared/build.gradle	(revision e187040cca3e60bfcff04b95ec0113dffb9d9921)
++++ /dev/null	(revision e187040cca3e60bfcff04b95ec0113dffb9d9921)
+@@ -1,19 +0,0 @@
+-plugins {
+-    id 'java'
+-}
+-
+-group = 'org.example'
+-version = '1.0-SNAPSHOT'
+-
+-repositories {
+-    mavenCentral()
+-}
+-
+-dependencies {
+-    testImplementation platform('org.junit:junit-bom:5.9.1')
+-    testImplementation 'org.junit.jupiter:junit-jupiter'
+-}
+-
+-test {
+-    useJUnitPlatform()
+-}
+\ No newline at end of file
+Index: cli/src/main/java/org/example/cli/Cli.java
+===================================================================
+diff --git a/cli/src/main/java/org/example/cli/Cli.java b/cli/src/main/java/org/example/cli/Cli.java
+deleted file mode 100644
+--- a/cli/src/main/java/org/example/cli/Cli.java	(revision e187040cca3e60bfcff04b95ec0113dffb9d9921)
++++ /dev/null	(revision e187040cca3e60bfcff04b95ec0113dffb9d9921)
+@@ -1,134 +0,0 @@
+-package org.example.cli;
+-
+-import org.example.engine.UserStore;
+-import org.example.shared.Action;
+-import org.example.shared.Currency;
+-import org.example.shared.Side;
+-import org.example.shared.Trade;
+-
+-import java.time.Clock;
+-import java.util.Scanner;
+-
+-public final class Cli {
+-
+-    private final UserStore userStore;
+-
+-    public Cli(final UserStore userStore) {
+-        this.userStore = userStore;
+-    }
+-
+-    public void awaitCommands() {
+-        final Scanner scanner = new Scanner(System.in);
+-
+-        System.out.println("CLI starting");
+-        System.out.println("Available commands: add, amend, cancel, list, quit");
+-        while (true) {
+-            System.out.println("> ");
+-            final String input = scanner.nextLine().trim();
+-
+-            if (input.equalsIgnoreCase("quit")) {
+-                System.out.println("Exiting CLI. Goodbye!");
+-                break;
+-            }
+-
+-            switch (input.toLowerCase()) {
+-                case "add":
+-                    addTrade(scanner);
+-                    break;
+-                case "amend":
+-                    amendTrade(scanner);
+-                    break;
+-                case "cancel":
+-                    cancelTrade(scanner);
+-                    break;
+-                case "list":
+-                    listTrades();
+-                    break;
+-                default:
+-                    System.out.println("Unknown command. Available commands: add, amend, cancel, list, quit");
+-            }
+-        }
+-        scanner.close();
+-    }
+-
+-    private void listTrades() {
+-        userStore.getAllPnLData();
+-    }
+-
+-    private void cancelTrade(final Scanner scanner) {
+-        System.out.println("Cancelling a trade...");
+-
+-        try {
+-            final String user = promptInput(scanner, "org.example.engine.User");
+-            final String account = promptInput(scanner, "org.example.engine.Account");
+-            final String portfolio = promptInput(scanner, "org.example.engine.Portfolio");
+-            final String strategy = promptInput(scanner, "org.example.engine.Strategy");
+-            final String bbgCode = promptInput(scanner, "BBGCode");
+-            final String tradeId = promptInput(scanner, "org.example.shared.Trade ID");
+-            final Currency currency = Currency.from(promptInput(scanner, "org.example.shared.Currency").toUpperCase());
+-            final Side side = Side.from(promptInput(scanner, "Buy or Sell (B/S)").toUpperCase());
+-            final double price = Double.parseDouble(promptInput(scanner, "Price"));
+-            final int volume = Integer.parseInt(promptInput(scanner, "Volume"));
+-            final long timestamp = Clock.systemUTC().millis();
+-
+-            final Trade trade = new Trade(tradeId, currency, side, price, volume, Action.CANCEL, timestamp);
+-            userStore.registerTrade(trade, user, account, portfolio, strategy, bbgCode);
+-            System.out.println("Attempting to cancel trade.");
+-        } catch (final Exception e) {
+-            System.err.println("error occurred when cancelling trade because " + e);
+-        }
+-    }
+-
+-    private void amendTrade(final Scanner scanner) {
+-        System.out.println("Amending a trade...");
+-
+-        try {
+-            final String user = promptInput(scanner, "org.example.engine.User");
+-            final String account = promptInput(scanner, "org.example.engine.Account");
+-            final String portfolio = promptInput(scanner, "org.example.engine.Portfolio");
+-            final String strategy = promptInput(scanner, "org.example.engine.Strategy");
+-            final String bbgCode = promptInput(scanner, "BBGCode");
+-            final String tradeId = promptInput(scanner, "org.example.shared.Trade ID");
+-            final Currency currency = Currency.from(promptInput(scanner, "org.example.shared.Currency").toUpperCase());
+-            final Side side = Side.from(promptInput(scanner, "Buy or Sell (B/S)").toUpperCase());
+-            final double price = Double.parseDouble(promptInput(scanner, "Price"));
+-            final int volume = Integer.parseInt(promptInput(scanner, "Volume"));
+-            final long timestamp = Clock.systemUTC().millis();
+-
+-            final Trade trade = new Trade(tradeId, currency, side, price, volume, Action.AMEND, timestamp);
+-            userStore.registerTrade(trade, user, account, portfolio, strategy, bbgCode);
+-            System.out.println("Attempting to amend trade. If does not exist, will be treated like a new trade");
+-        } catch (final Exception e) {
+-            System.err.println("error occurred when amending trade because " + e);
+-        }
+-    }
+-
+-    private void addTrade(final Scanner scanner) {
+-        System.out.println("Adding a new trade...");
+-
+-        try {
+-            final String user = promptInput(scanner, "org.example.engine.User");
+-            final String account = promptInput(scanner, "org.example.engine.Account");
+-            final String portfolio = promptInput(scanner, "org.example.engine.Portfolio");
+-            final String strategy = promptInput(scanner, "org.example.engine.Strategy");
+-            final String bbgCode = promptInput(scanner, "BBGCode");
+-            final String tradeId = promptInput(scanner, "org.example.shared.Trade ID");
+-            final Currency currency = Currency.from(promptInput(scanner, "org.example.shared.Currency").toUpperCase());
+-            final Side side = Side.from(promptInput(scanner, "Buy or Sell (B/S)").toUpperCase());
+-            final double price = Double.parseDouble(promptInput(scanner, "Price"));
+-            final int volume = Integer.parseInt(promptInput(scanner, "Volume"));
+-            final long timestamp = Clock.systemUTC().millis();
+-
+-            final Trade trade = new Trade(tradeId, currency, side, price, volume, Action.NEW, timestamp);
+-            userStore.registerTrade(trade, user, account, portfolio, strategy, bbgCode);
+-            System.out.println("org.example.shared.Trade added successfully.");
+-        } catch (final Exception e) {
+-            System.err.println("error occurred when adding trade because " + e);
+-        }
+-    }
+-
+-    private static String promptInput(final Scanner scanner, final String prompt) {
+-        System.out.print(prompt + ": ");
+-        return scanner.nextLine().trim();
+-    }
+-}
+Index: shared/src/main/java/org/example/shared/Currency.java
+===================================================================
+diff --git a/shared/src/main/java/org/example/shared/Currency.java b/shared/src/main/java/org/example/shared/Currency.java
+deleted file mode 100644
+--- a/shared/src/main/java/org/example/shared/Currency.java	(revision e187040cca3e60bfcff04b95ec0113dffb9d9921)
++++ /dev/null	(revision e187040cca3e60bfcff04b95ec0113dffb9d9921)
+@@ -1,40 +0,0 @@
+-package org.example.shared;
+-
+-public enum Currency {
+-    EUR,
+-    GBP,
+-    JPY,
+-    KRW,
+-    NOK,
+-    USD;
+-
+-    public static Currency from(final String currencyString)
+-    {
+-        if (EUR.toString().equals(currencyString)) {
+-            return EUR;
+-        } else if (GBP.toString().equals(currencyString)) {
+-            return GBP;
+-        } else if (JPY.toString().equals(currencyString)) {
+-            return JPY;
+-        } else if (KRW.toString().equals(currencyString)) {
+-            return KRW;
+-        } else if (NOK.toString().equals(currencyString)) {
+-            return NOK;
+-        } else if (USD.toString().equals(currencyString)) {
+-            return USD;
+-        } else {
+-            throw new IllegalArgumentException(currencyString + " is not supported");
+-        }
+-    }
+-
+-    public static double conversionRate(final Currency currency) {
+-        return switch (currency) {
+-            case EUR -> 1.12;
+-            case GBP -> 1.32;
+-            case JPY -> 0.0069;
+-            case KRW -> 0.00075;
+-            case NOK -> 0.096;
+-            default -> 1;
+-        };
+-    }
+-}
+Index: engine/src/main/java/org/example/engine/Portfolio.java
+===================================================================
+diff --git a/engine/src/main/java/org/example/engine/Portfolio.java b/engine/src/main/java/org/example/engine/Portfolio.java
+deleted file mode 100644
+--- a/engine/src/main/java/org/example/engine/Portfolio.java	(revision e187040cca3e60bfcff04b95ec0113dffb9d9921)
++++ /dev/null	(revision e187040cca3e60bfcff04b95ec0113dffb9d9921)
+@@ -1,55 +0,0 @@
+-package org.example.engine;
+-
+-import org.example.shared.Trade;
+-import org.slf4j.Logger;
+-import org.slf4j.LoggerFactory;
+-
+-import java.util.Map;
+-import java.util.concurrent.ConcurrentHashMap;
+-import java.util.concurrent.atomic.DoubleAdder;
+-
+-final class Portfolio {
+-
+-    private static final Logger LOG = LoggerFactory.getLogger(Portfolio.class);
+-
+-    private final ConcurrentHashMap<String, Strategy> strategyMap = new ConcurrentHashMap<>();
+-
+-    public void registerTrade(final Trade trade, final String strategyString, final String bbgCode) {
+-        final Strategy strategy = strategyMap.computeIfAbsent(strategyString, key -> {
+-            if (LOG.isDebugEnabled()) {
+-                LOG.debug("creating new strategy for trade: {}", trade);
+-            }
+-            return new Strategy();
+-        });
+-        strategy.registerTrade(trade, bbgCode);
+-    }
+-
+-    public double getPnL() {
+-        final DoubleAdder pnL = new DoubleAdder();
+-        for (final Map.Entry<String, Strategy> entry : strategyMap.entrySet()) {
+-            final double strategyPnL = entry.getValue().getPnL();
+-            if (LOG.isDebugEnabled()) {
+-                LOG.debug("[strategy={},PnL={}]", entry.getKey(), strategyPnL);
+-            }
+-            pnL.add(strategyPnL);
+-        }
+-        return pnL.sum();
+-    }
+-
+-    @Override
+-    public String toString() {
+-        final StringBuilder sb = new StringBuilder();
+-        sb.append("org.example.engine.Portfolio=[");
+-        for (final Map.Entry<String, Strategy> entry : strategyMap.entrySet()) {
+-            sb.append("strategy=[");
+-            sb.append(entry.getKey());
+-            sb.append(",");
+-            sb.append(entry.getValue());
+-            sb.append(",total PnL=");
+-            sb.append(entry.getValue().getPnL());
+-            sb.append("]");
+-        }
+-        sb.append("]");
+-        return sb.toString();
+-    }
+-}
+Index: shared/src/main/java/org/example/shared/Side.java
+===================================================================
+diff --git a/shared/src/main/java/org/example/shared/Side.java b/shared/src/main/java/org/example/shared/Side.java
+deleted file mode 100644
+--- a/shared/src/main/java/org/example/shared/Side.java	(revision e187040cca3e60bfcff04b95ec0113dffb9d9921)
++++ /dev/null	(revision e187040cca3e60bfcff04b95ec0113dffb9d9921)
+@@ -1,24 +0,0 @@
+-package org.example.shared;
+-
+-public enum Side {
+-    B,
+-    S;
+-
+-    public static Side from(final String sideString) {
+-        if (B.toString().equals(sideString)) {
+-            return B;
+-        } else if (S.toString().equals(sideString)) {
+-            return S;
+-        } else {
+-            throw new IllegalArgumentException(sideString + " is not supported");
+-        }
+-    }
+-
+-    public static int conversion(final Side side) {
+-        if (side.equals(B)) {
+-            return -1;
+-        } else {
+-            return 1;
+-        }
+-    }
+-}
+Index: engine/src/main/java/org/example/engine/Stock.java
+===================================================================
+diff --git a/engine/src/main/java/org/example/engine/Stock.java b/engine/src/main/java/org/example/engine/Stock.java
+deleted file mode 100644
+--- a/engine/src/main/java/org/example/engine/Stock.java	(revision e187040cca3e60bfcff04b95ec0113dffb9d9921)
++++ /dev/null	(revision e187040cca3e60bfcff04b95ec0113dffb9d9921)
+@@ -1,93 +0,0 @@
+-package org.example.engine;
+-
+-import org.example.shared.Action;
+-import org.example.shared.Currency;
+-import org.example.shared.Side;
+-import org.example.shared.Trade;
+-import org.slf4j.Logger;
+-import org.slf4j.LoggerFactory;
+-
+-import java.util.concurrent.ConcurrentHashMap;
+-import java.util.concurrent.atomic.DoubleAdder;
+-
+-final class Stock {
+-    private static final Logger LOG = LoggerFactory.getLogger(Stock.class);
+-    private final ConcurrentHashMap<String, Trade> tradeMap = new ConcurrentHashMap<>();
+-    private final DoubleAdder PnL = new DoubleAdder();
+-
+-    public void registerTrade(final Trade trade) {
+-        tradeMap.compute(trade.tradeId(), (key, existingTrade) -> {
+-            if (existingTrade == null) {
+-                if (!trade.action().equals(Action.CANCEL)) {
+-                    if (LOG.isDebugEnabled()) {
+-                        LOG.debug("Registering new trade {}", trade);
+-                    }
+-                    calculatePnLForNewTrade(trade);
+-                    return trade;
+-                }
+-                return null;
+-            }
+-
+-            if (trade.timestamp() < existingTrade.timestamp()) {
+-                if (LOG.isDebugEnabled()) {
+-                    LOG.debug("org.example.shared.Trade is not newer than the existing trade for ID {}", trade.tradeId());
+-                }
+-                return existingTrade;
+-            }
+-
+-            switch (existingTrade.action()) {
+-                case Action.NEW -> handleNewTrade(existingTrade, trade);
+-                case Action.AMEND -> handleAmendedTrade(existingTrade, trade);
+-            }
+-
+-            return trade.action() == Action.CANCEL ? null : trade;
+-        });
+-    }
+-
+-    public double getPnL() {
+-        return PnL.sum();
+-    }
+-
+-    private void handleNewTrade(final Trade existingTrade, final Trade newTrade) {
+-        switch (newTrade.action()) {
+-            case Action.AMEND -> {
+-                amendPnLForTrade(existingTrade, newTrade);
+-                if (LOG.isDebugEnabled()) {
+-                    LOG.debug("Amended trade {}", newTrade);
+-                }
+-            }
+-            case Action.CANCEL -> {
+-                cancelPnLForTrade(existingTrade);
+-                if (LOG.isDebugEnabled()) {
+-                    LOG.debug("Cancelled trade {}", newTrade);
+-                }
+-            }
+-        }
+-    }
+-
+-    private void handleAmendedTrade(final Trade existingTrade, final Trade newTrade) {
+-        if (newTrade.action() == Action.CANCEL) {
+-            cancelPnLForTrade(existingTrade);
+-            if (LOG.isDebugEnabled()) {
+-                LOG.debug("Cancelled trade {}", newTrade);
+-            }
+-        }
+-    }
+-
+-    private void calculatePnLForNewTrade(final Trade trade) {
+-        final double conversionRate = Currency.conversionRate(trade.currency());
+-        final int sideMultiplier = Side.conversion(trade.side());
+-        PnL.add(trade.price() * trade.volume() * conversionRate * sideMultiplier);
+-    }
+-
+-    private void amendPnLForTrade(final Trade oldTrade, final Trade newTrade) {
+-        cancelPnLForTrade(oldTrade);
+-        calculatePnLForNewTrade(newTrade);
+-    }
+-
+-    private void cancelPnLForTrade(final Trade trade) {
+-        final double conversionRate = Currency.conversionRate(trade.currency());
+-        final int sideMultiplier = Side.conversion(trade.side());
+-        PnL.add(-trade.price() * trade.volume() * conversionRate * sideMultiplier);
+-    }
+-}
+Index: engine/src/main/java/org/example/engine/Strategy.java
+===================================================================
+diff --git a/engine/src/main/java/org/example/engine/Strategy.java b/engine/src/main/java/org/example/engine/Strategy.java
+deleted file mode 100644
+--- a/engine/src/main/java/org/example/engine/Strategy.java	(revision e187040cca3e60bfcff04b95ec0113dffb9d9921)
++++ /dev/null	(revision e187040cca3e60bfcff04b95ec0113dffb9d9921)
+@@ -1,52 +0,0 @@
+-package org.example.engine;
+-
+-import org.example.shared.Trade;
+-import org.slf4j.Logger;
+-import org.slf4j.LoggerFactory;
+-
+-import java.util.Map;
+-import java.util.concurrent.ConcurrentHashMap;
+-import java.util.concurrent.atomic.DoubleAdder;
+-
+-final class Strategy {
+-
+-    private static final Logger LOG = LoggerFactory.getLogger(Strategy.class);
+-    private final ConcurrentHashMap<String, Stock> stockMap = new ConcurrentHashMap<>();
+-
+-    public void registerTrade(final Trade trade, final String bbgCode) {
+-        final Stock stock = stockMap.computeIfAbsent(bbgCode, key -> {
+-            if (LOG.isDebugEnabled()) {
+-                LOG.debug("new stock seen for strategy, registering trade {}", trade);
+-            }
+-            return new Stock();
+-        });
+-        stock.registerTrade(trade);
+-    }
+-
+-    public double getPnL() {
+-        final DoubleAdder pnL = new DoubleAdder();
+-        for (final Map.Entry<String, Stock> entry : stockMap.entrySet()) {
+-            final double strategyPnL = entry.getValue().getPnL();
+-            if (LOG.isDebugEnabled()) {
+-                LOG.debug("[stock={},PnL={}]", entry.getKey(), strategyPnL);
+-            }
+-            pnL.add(strategyPnL);
+-        }
+-        return pnL.sum();
+-    }
+-
+-    @Override
+-    public String toString() {
+-        final StringBuilder sb = new StringBuilder();
+-        sb.append("org.example.engine.Strategy=[");
+-        for (final Map.Entry<String, Stock> entry : stockMap.entrySet()) {
+-            sb.append("stock=[");
+-            sb.append(entry.getKey());
+-            sb.append(",total PnL=");
+-            sb.append(entry.getValue().getPnL());
+-            sb.append("]");
+-        }
+-        sb.append("]");
+-        return sb.toString();
+-    }
+-}
+Index: shared/src/main/java/org/example/shared/Trade.java
+===================================================================
+diff --git a/shared/src/main/java/org/example/shared/Trade.java b/shared/src/main/java/org/example/shared/Trade.java
+deleted file mode 100644
+--- a/shared/src/main/java/org/example/shared/Trade.java	(revision e187040cca3e60bfcff04b95ec0113dffb9d9921)
++++ /dev/null	(revision e187040cca3e60bfcff04b95ec0113dffb9d9921)
+@@ -1,10 +0,0 @@
+-package org.example.shared;
+-
+-public record Trade(String tradeId,
+-                    Currency currency,
+-                    Side side,
+-                    double price,
+-                    int volume,
+-                    Action action,
+-                    long timestamp) {
+-}
+Index: engine/src/main/java/org/example/engine/User.java
+===================================================================
+diff --git a/engine/src/main/java/org/example/engine/User.java b/engine/src/main/java/org/example/engine/User.java
+deleted file mode 100644
+--- a/engine/src/main/java/org/example/engine/User.java	(revision e187040cca3e60bfcff04b95ec0113dffb9d9921)
++++ /dev/null	(revision e187040cca3e60bfcff04b95ec0113dffb9d9921)
+@@ -1,56 +0,0 @@
+-package org.example.engine;
+-
+-import org.example.shared.Trade;
+-import org.slf4j.Logger;
+-import org.slf4j.LoggerFactory;
+-
+-import java.util.Map;
+-import java.util.concurrent.ConcurrentHashMap;
+-import java.util.concurrent.atomic.DoubleAdder;
+-
+-final class User {
+-
+-    private static final Logger LOG = LoggerFactory.getLogger(User.class);
+-
+-    private final ConcurrentHashMap<String, Account> accountMap = new ConcurrentHashMap<>();
+-
+-    public void registerTrade(final Trade trade, final String accountString, final String portfolioString,
+-                              final String strategyString, final String bbgCode) {
+-        final Account account = accountMap.computeIfAbsent(accountString, key -> {
+-            if (LOG.isDebugEnabled()) {
+-                LOG.debug("creating new account for trade {}", trade);
+-            }
+-            return new Account();
+-        });
+-        account.registerTrade(trade, portfolioString, strategyString, bbgCode);
+-    }
+-
+-    public double getPnL() {
+-        final DoubleAdder pnL = new DoubleAdder();
+-        for (final Map.Entry<String, Account> entry : accountMap.entrySet()) {
+-            final double accountPnL = entry.getValue().getPnL();
+-            if (LOG.isDebugEnabled()) {
+-                LOG.debug("[account={},PnL={}]", entry.getKey(), accountPnL);
+-            }
+-            pnL.add(accountPnL);
+-        }
+-        return pnL.sum();
+-    }
+-
+-    @Override
+-    public String toString() {
+-        final StringBuilder sb = new StringBuilder();
+-        sb.append("org.example.engine.User=[");
+-        for (final Map.Entry<String, Account> entry : accountMap.entrySet()) {
+-            sb.append("account=[");
+-            sb.append(entry.getKey());
+-            sb.append(",");
+-            sb.append(entry.getValue());
+-            sb.append(",total PnL=");
+-            sb.append(entry.getValue().getPnL());
+-            sb.append("]");
+-        }
+-        sb.append("]");
+-        return sb.toString();
+-    }
+-}
+Index: engine/src/main/java/org/example/engine/UserStore.java
+===================================================================
+diff --git a/engine/src/main/java/org/example/engine/UserStore.java b/engine/src/main/java/org/example/engine/UserStore.java
+deleted file mode 100644
+--- a/engine/src/main/java/org/example/engine/UserStore.java	(revision e187040cca3e60bfcff04b95ec0113dffb9d9921)
++++ /dev/null	(revision e187040cca3e60bfcff04b95ec0113dffb9d9921)
+@@ -1,39 +0,0 @@
+-package org.example.engine;
+-
+-import org.example.shared.Trade;
+-import org.slf4j.Logger;
+-import org.slf4j.LoggerFactory;
+-
+-import java.util.Map;
+-import java.util.concurrent.ConcurrentHashMap;
+-
+-public final class UserStore {
+-
+-    private static final Logger LOG = LoggerFactory.getLogger(UserStore.class);
+-
+-    private final ConcurrentHashMap<String, User> userMap = new ConcurrentHashMap<>();
+-
+-    public void registerTrade(final Trade trade, final String userString, final String accountString,
+-                              final String portfolioString,
+-                              final String strategyString,
+-                              final String bbgCode) {
+-        if (trade != null) {
+-            final User user = userMap.computeIfAbsent(userString, key -> {
+-                if (LOG.isDebugEnabled()) {
+-                    LOG.debug("creating new user for trade {}", trade);
+-                }
+-                return new User();
+-            });
+-            user.registerTrade(trade, accountString, portfolioString, strategyString, bbgCode);
+-        } else {
+-            LOG.warn("not registering trade as was null");
+-        }
+-    }
+-
+-    public void getAllPnLData() {
+-        for (final Map.Entry<String, User> entry : userMap.entrySet()) {
+-            System.out.println("[user=" + entry.getKey() + ",object=" + entry.getValue() + ",total PnL=" +
+-                    entry.getValue().getPnL() + "]");
+-        }
+-    }
+-}
+Index: reader/src/main/java/org/example/reader/LineProcessor.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package org.example.reader;\n\nimport org.example.engine.UserStore;\nimport org.example.shared.Action;\nimport org.example.shared.Currency;\nimport org.example.shared.Side;\nimport org.example.shared.Trade;\nimport org.slf4j.Logger;\nimport org.slf4j.LoggerFactory;\n\nimport java.time.LocalDateTime;\nimport java.time.ZoneOffset;\nimport java.time.format.DateTimeFormatter;\nimport java.time.format.DateTimeParseException;\n\nfinal class LineProcessor {\n\n    private static final Logger LOG = LoggerFactory.getLogger(LineProcessor.class);\n\n    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE_TIME;\n\n    public static void processLine(final String lineToProcess, final UserStore userStore) {\n        final String[] lineParts = lineToProcess.split(\",\", 13);\n        if (lineParts.length != 13) {\n            LOG.warn(\"Invalid line format: {}\", lineToProcess);\n            return;\n        }\n\n        try {\n            final String tradeId = lineParts[0];\n            final String bbgCode = lineParts[1];\n            final Currency currency = Currency.from(lineParts[2]);\n            final Side side = Side.from(lineParts[3]);\n            final double price = Double.parseDouble(lineParts[4]);\n            final int volume = Integer.parseInt(lineParts[5]);\n            final String portfolio = lineParts[6];\n            final Action action = Action.from(lineParts[7]);\n            final String account = lineParts[8];\n            final String strategy = lineParts[9];\n            final String user = lineParts[10];\n            final LocalDateTime dateTime = LocalDateTime.parse(lineParts[11], DATE_TIME_FORMATTER);\n            final long timeInMs = dateTime.toInstant(ZoneOffset.UTC).toEpochMilli();\n\n            final Trade trade = new Trade(tradeId, currency, side, price, volume, action, timeInMs);\n            userStore.registerTrade(trade, user, account, portfolio, strategy, bbgCode);\n        } catch (NumberFormatException | DateTimeParseException e) {\n            LOG.warn(\"Unable to convert fields in line to object: {} {}\", lineToProcess, e.getMessage());\n        } catch (IllegalArgumentException e) {\n            LOG.warn(\"Invalid value in line fields: {} {}\", lineToProcess, e.getMessage());\n        }\n    }\n}\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/reader/src/main/java/org/example/reader/LineProcessor.java b/reader/src/main/java/org/example/reader/LineProcessor.java
+--- a/reader/src/main/java/org/example/reader/LineProcessor.java	(revision e187040cca3e60bfcff04b95ec0113dffb9d9921)
++++ b/reader/src/main/java/org/example/reader/LineProcessor.java	(date 1732485710927)
+@@ -1,52 +1,32 @@
+ package org.example.reader;
+ 
+-import org.example.engine.UserStore;
+-import org.example.shared.Action;
+-import org.example.shared.Currency;
+-import org.example.shared.Side;
+-import org.example.shared.Trade;
+ import org.slf4j.Logger;
+ import org.slf4j.LoggerFactory;
+ 
+-import java.time.LocalDateTime;
+-import java.time.ZoneOffset;
+-import java.time.format.DateTimeFormatter;
+-import java.time.format.DateTimeParseException;
++import java.nio.MappedByteBuffer;
++import java.util.Queue;
+ 
+-final class LineProcessor {
++public final class LineProcessor {
+ 
+     private static final Logger LOG = LoggerFactory.getLogger(LineProcessor.class);
+ 
+-    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
+-
+-    public static void processLine(final String lineToProcess, final UserStore userStore) {
+-        final String[] lineParts = lineToProcess.split(",", 13);
+-        if (lineParts.length != 13) {
+-            LOG.warn("Invalid line format: {}", lineToProcess);
++    public static void process(final int offset, final MappedByteBuffer bufferSlice, final Queue<Integer> commaPositions) {
++        if (commaPositions.size() > 12 || commaPositions.isEmpty()) {
++            LOG.info("cant decode correctly at offset {}", offset);
+             return;
+         }
+ 
+-        try {
+-            final String tradeId = lineParts[0];
+-            final String bbgCode = lineParts[1];
+-            final Currency currency = Currency.from(lineParts[2]);
+-            final Side side = Side.from(lineParts[3]);
+-            final double price = Double.parseDouble(lineParts[4]);
+-            final int volume = Integer.parseInt(lineParts[5]);
+-            final String portfolio = lineParts[6];
+-            final Action action = Action.from(lineParts[7]);
+-            final String account = lineParts[8];
+-            final String strategy = lineParts[9];
+-            final String user = lineParts[10];
+-            final LocalDateTime dateTime = LocalDateTime.parse(lineParts[11], DATE_TIME_FORMATTER);
+-            final long timeInMs = dateTime.toInstant(ZoneOffset.UTC).toEpochMilli();
+-
+-            final Trade trade = new Trade(tradeId, currency, side, price, volume, action, timeInMs);
+-            userStore.registerTrade(trade, user, account, portfolio, strategy, bbgCode);
+-        } catch (NumberFormatException | DateTimeParseException e) {
+-            LOG.warn("Unable to convert fields in line to object: {} {}", lineToProcess, e.getMessage());
+-        } catch (IllegalArgumentException e) {
+-            LOG.warn("Invalid value in line fields: {} {}", lineToProcess, e.getMessage());
++        int commaPos = commaPositions.poll() - offset;
++        final StringBuilder sb = new StringBuilder(bufferSlice.limit());
++        for (int i = 0; i < bufferSlice.limit(); i++) {
++            if (i == commaPos) {
++                sb.setLength(0);
++                if (!commaPositions.isEmpty()) {
++                    commaPos = commaPositions.poll() - offset;
++                }
++            } else {
++                sb.append(bufferSlice.get());
++            }
+         }
+     }
+ }
+Index: .idea/runConfigurations/ReaderMain.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><component name=\"ProjectRunConfigurationManager\">\n  <configuration default=\"false\" name=\"ReaderMain\" type=\"Application\" factoryName=\"Application\" nameIsGenerated=\"true\">\n    <option name=\"MAIN_CLASS_NAME\" value=\"ReaderMain\" />\n    <module name=\"PnLCalculator.reader.main\" />\n    <option name=\"PROGRAM_PARAMETERS\" value=\"&quot;reader/src/main/resources/sample_trades (3).csv&quot;\" />\n    <method v=\"2\">\n      <option name=\"Make\" enabled=\"true\" />\n    </method>\n  </configuration>\n</component>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/.idea/runConfigurations/ReaderMain.xml b/.idea/runConfigurations/ReaderMain.xml
+--- a/.idea/runConfigurations/ReaderMain.xml	(revision e187040cca3e60bfcff04b95ec0113dffb9d9921)
++++ b/.idea/runConfigurations/ReaderMain.xml	(date 1724600155075)
+@@ -1,6 +1,6 @@
+ <component name="ProjectRunConfigurationManager">
+   <configuration default="false" name="ReaderMain" type="Application" factoryName="Application" nameIsGenerated="true">
+-    <option name="MAIN_CLASS_NAME" value="ReaderMain" />
++    <option name="MAIN_CLASS_NAME" value="org.example.reader.ReaderMain" />
+     <module name="PnLCalculator.reader.main" />
+     <option name="PROGRAM_PARAMETERS" value="&quot;reader/src/main/resources/sample_trades (3).csv&quot;" />
+     <method v="2">
+Index: reader/src/main/java/org/example/reader/CsvReader.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package org.example.reader;\n\nimport org.example.engine.UserStore;\nimport org.slf4j.Logger;\nimport org.slf4j.LoggerFactory;\n\nimport java.io.RandomAccessFile;\nimport java.nio.MappedByteBuffer;\nimport java.nio.channels.FileChannel;\nimport java.nio.file.Paths;\nimport java.util.ArrayList;\nimport java.util.List;\nimport java.util.concurrent.CompletableFuture;\nimport java.util.concurrent.ExecutorService;\nimport java.util.concurrent.Executors;\nimport java.util.concurrent.TimeUnit;\n\nfinal class CsvReader {\n\n    private static final Logger LOG = LoggerFactory.getLogger(CsvReader.class);\n    private static final int BATCH_SIZE = 1000;\n    private static final int MAX_STRING_LENGTH = 256;\n\n    public static void readCsvFile(final String filePath, final UserStore userStore)\n    {\n        final ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());\n        final List<CompletableFuture<?>> futures = new ArrayList<>();\n        try (final FileChannel fileChannel = new RandomAccessFile(Paths.get(filePath).toAbsolutePath().toString(), \"r\")\n                .getChannel()) {\n            final MappedByteBuffer buffer = fileChannel.map(FileChannel.MapMode.READ_ONLY, 0,\n                    fileChannel.size());\n            final StringBuilder line = new StringBuilder(MAX_STRING_LENGTH);\n            boolean skipFirstLine = true;\n            final List<String> batch = new ArrayList<>(BATCH_SIZE);\n            for (int i = 0; i < fileChannel.size(); i++) {\n                final char character = (char) buffer.get();\n\n                if (character == '\\n' || character == '\\r') {\n                    if (character == '\\r' && buffer.get(i + 1) == '\\n') {\n                        i++;\n                    }\n                    if (!line.isEmpty() && skipFirstLine) {\n                        skipFirstLine = false;\n                        line.setLength(0);\n                        continue;\n                    }\n\n                    if (!line.isEmpty()) {\n                        batch.add(line.toString());\n                        if (batch.size() > BATCH_SIZE) {\n                            submitBatch(batch, userStore, futures, executorService);\n                        }\n                        line.setLength(0);\n                    }\n                } else {\n                    line.append(character);\n                }\n            }\n            if (!line.isEmpty()) {\n                batch.add(line.toString());\n            }\n\n            if (!batch.isEmpty()) {\n                submitBatch(batch, userStore, futures, executorService);\n            }\n        } catch (final Exception e) {\n            LOG.error(\"error when trying to read file: \", e);\n        } finally {\n            final CompletableFuture<Void> allOf = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));\n            allOf.join();\n\n            executorService.shutdown();\n            try {\n                if (!executorService.awaitTermination(60, TimeUnit.SECONDS)) {\n                    executorService.shutdownNow();\n                }\n            } catch (InterruptedException e) {\n                executorService.shutdownNow();\n            }\n        }\n    }\n\n    private static void submitBatch(final List<String> batch,\n                                    final UserStore userStore,\n                                    final List<CompletableFuture<?>> futures,\n                                    final ExecutorService executorService) {\n        final List<String> currentBatch = new ArrayList<>(batch);\n        batch.clear();\n\n        final CompletableFuture<?> future = CompletableFuture.runAsync(() -> {\n            for (final String line : currentBatch) {\n                LineProcessor.processLine(line, userStore);\n            }\n        }, executorService);\n\n        futures.add(future);\n    }\n}\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/reader/src/main/java/org/example/reader/CsvReader.java b/reader/src/main/java/org/example/reader/CsvReader.java
+--- a/reader/src/main/java/org/example/reader/CsvReader.java	(revision e187040cca3e60bfcff04b95ec0113dffb9d9921)
++++ b/reader/src/main/java/org/example/reader/CsvReader.java	(date 1732484431017)
+@@ -1,98 +1,53 @@
+ package org.example.reader;
+ 
+-import org.example.engine.UserStore;
+ import org.slf4j.Logger;
+ import org.slf4j.LoggerFactory;
+ 
+ import java.io.RandomAccessFile;
+ import java.nio.MappedByteBuffer;
+ import java.nio.channels.FileChannel;
+-import java.nio.file.Paths;
++import java.util.ArrayDeque;
+ import java.util.ArrayList;
+ import java.util.List;
+-import java.util.concurrent.CompletableFuture;
+-import java.util.concurrent.ExecutorService;
+-import java.util.concurrent.Executors;
+-import java.util.concurrent.TimeUnit;
++import java.util.Queue;
+ 
+-final class CsvReader {
++public final class CsvReader {
+ 
+     private static final Logger LOG = LoggerFactory.getLogger(CsvReader.class);
+-    private static final int BATCH_SIZE = 1000;
+-    private static final int MAX_STRING_LENGTH = 256;
+ 
+-    public static void readCsvFile(final String filePath, final UserStore userStore)
+-    {
+-        final ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+-        final List<CompletableFuture<?>> futures = new ArrayList<>();
+-        try (final FileChannel fileChannel = new RandomAccessFile(Paths.get(filePath).toAbsolutePath().toString(), "r")
+-                .getChannel()) {
+-            final MappedByteBuffer buffer = fileChannel.map(FileChannel.MapMode.READ_ONLY, 0,
+-                    fileChannel.size());
+-            final StringBuilder line = new StringBuilder(MAX_STRING_LENGTH);
+-            boolean skipFirstLine = true;
+-            final List<String> batch = new ArrayList<>(BATCH_SIZE);
+-            for (int i = 0; i < fileChannel.size(); i++) {
+-                final char character = (char) buffer.get();
++    public static void readFile(final String path) {
++        try (RandomAccessFile raf = new RandomAccessFile(path, "r");
++             FileChannel fc = raf.getChannel()) {
+ 
+-                if (character == '\n' || character == '\r') {
+-                    if (character == '\r' && buffer.get(i + 1) == '\n') {
+-                        i++;
+-                    }
+-                    if (!line.isEmpty() && skipFirstLine) {
+-                        skipFirstLine = false;
+-                        line.setLength(0);
+-                        continue;
++            final MappedByteBuffer buffer = fc.map(FileChannel.MapMode.READ_ONLY, 0, fc.size());
++            final Queue<Integer> commaPositions = new ArrayDeque<>(12);
++            int startOfLine = 0;
++            boolean shouldProcess = false;
++            for (int i = 0; i < buffer.limit(); i++) {
++                final byte b = buffer.get();
++                if (b == '\n') {
++                    if (shouldProcess) {
++                        final int endOfLine = i - 1;
++                        final int length = endOfLine - startOfLine;
++                        final MappedByteBuffer bufferSlice = buffer.slice(startOfLine, length);
++                        LineProcessor.process(startOfLine, bufferSlice, commaPositions);
+                     }
+-
+-                    if (!line.isEmpty()) {
+-                        batch.add(line.toString());
+-                        if (batch.size() > BATCH_SIZE) {
+-                            submitBatch(batch, userStore, futures, executorService);
+-                        }
+-                        line.setLength(0);
+-                    }
+-                } else {
+-                    line.append(character);
++                    commaPositions.clear();
++                    startOfLine = i + 1;
++                    shouldProcess = true;
++                }
++                if (b == ',' && shouldProcess) {
++                    commaPositions.offer(i);
+                 }
+             }
+-            if (!line.isEmpty()) {
+-                batch.add(line.toString());
+-            }
++            final int endOfLine = buffer.limit();
++            final int length = endOfLine - startOfLine;
++            final MappedByteBuffer bufferSlice = buffer.slice(startOfLine, length);
++            LineProcessor.process(startOfLine, bufferSlice, commaPositions);
++            commaPositions.clear();
+ 
+-            if (!batch.isEmpty()) {
+-                submitBatch(batch, userStore, futures, executorService);
+-            }
+         } catch (final Exception e) {
+-            LOG.error("error when trying to read file: ", e);
+-        } finally {
+-            final CompletableFuture<Void> allOf = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
+-            allOf.join();
+-
+-            executorService.shutdown();
+-            try {
+-                if (!executorService.awaitTermination(60, TimeUnit.SECONDS)) {
+-                    executorService.shutdownNow();
+-                }
+-            } catch (InterruptedException e) {
+-                executorService.shutdownNow();
+-            }
++            e.printStackTrace();
+         }
+     }
+-
+-    private static void submitBatch(final List<String> batch,
+-                                    final UserStore userStore,
+-                                    final List<CompletableFuture<?>> futures,
+-                                    final ExecutorService executorService) {
+-        final List<String> currentBatch = new ArrayList<>(batch);
+-        batch.clear();
+-
+-        final CompletableFuture<?> future = CompletableFuture.runAsync(() -> {
+-            for (final String line : currentBatch) {
+-                LineProcessor.processLine(line, userStore);
+-            }
+-        }, executorService);
+-
+-        futures.add(future);
+-    }
+ }
+Index: .idea/gradle.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<project version=\"4\">\n  <component name=\"GradleMigrationSettings\" migrationVersion=\"1\" />\n  <component name=\"GradleSettings\">\n    <option name=\"linkedExternalProjectsSettings\">\n      <GradleProjectSettings>\n        <option name=\"externalProjectPath\" value=\"$PROJECT_DIR$\" />\n        <option name=\"gradleHome\" value=\"\" />\n        <option name=\"modules\">\n          <set>\n            <option value=\"$PROJECT_DIR$\" />\n            <option value=\"$PROJECT_DIR$/engine\" />\n            <option value=\"$PROJECT_DIR$/reader\" />\n            <option value=\"$PROJECT_DIR$/shared\" />\n          </set>\n        </option>\n      </GradleProjectSettings>\n    </option>\n  </component>\n</project>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/.idea/gradle.xml b/.idea/gradle.xml
+--- a/.idea/gradle.xml	(revision e187040cca3e60bfcff04b95ec0113dffb9d9921)
++++ b/.idea/gradle.xml	(date 1732472766767)
+@@ -9,9 +9,7 @@
+         <option name="modules">
+           <set>
+             <option value="$PROJECT_DIR$" />
+-            <option value="$PROJECT_DIR$/engine" />
+             <option value="$PROJECT_DIR$/reader" />
+-            <option value="$PROJECT_DIR$/shared" />
+           </set>
+         </option>
+       </GradleProjectSettings>
+Index: .idea/workspace.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<project version=\"4\">\n  <component name=\"AutoImportSettings\">\n    <option name=\"autoReloadType\" value=\"SELECTIVE\" />\n  </component>\n  <component name=\"ChangeListManager\">\n    <list default=\"true\" id=\"d4cbb71b-800e-44fc-ac55-d78e368a6dbc\" name=\"Changes\" comment=\"\">\n      <change afterPath=\"$PROJECT_DIR$/.gitignore\" afterDir=\"false\" />\n      <change afterPath=\"$PROJECT_DIR$/.idea/gradle.xml\" afterDir=\"false\" />\n      <change afterPath=\"$PROJECT_DIR$/.idea/misc.xml\" afterDir=\"false\" />\n      <change afterPath=\"$PROJECT_DIR$/.idea/runConfigurations/ReaderMain.xml\" afterDir=\"false\" />\n      <change afterPath=\"$PROJECT_DIR$/.idea/uiDesigner.xml\" afterDir=\"false\" />\n      <change afterPath=\"$PROJECT_DIR$/.idea/vcs.xml\" afterDir=\"false\" />\n      <change afterPath=\"$PROJECT_DIR$/.idea/workspace.xml\" afterDir=\"false\" />\n      <change afterPath=\"$PROJECT_DIR$/README.md\" afterDir=\"false\" />\n      <change afterPath=\"$PROJECT_DIR$/build.gradle\" afterDir=\"false\" />\n      <change afterPath=\"$PROJECT_DIR$/gradle/wrapper/gradle-wrapper.jar\" afterDir=\"false\" />\n      <change afterPath=\"$PROJECT_DIR$/gradle/wrapper/gradle-wrapper.properties\" afterDir=\"false\" />\n      <change afterPath=\"$PROJECT_DIR$/gradlew\" afterDir=\"false\" />\n      <change afterPath=\"$PROJECT_DIR$/gradlew.bat\" afterDir=\"false\" />\n      <change afterPath=\"$PROJECT_DIR$/reader/src/main/java/Account.java\" afterDir=\"false\" />\n      <change afterPath=\"$PROJECT_DIR$/reader/src/main/java/Action.java\" afterDir=\"false\" />\n      <change afterPath=\"$PROJECT_DIR$/reader/src/main/java/Cli.java\" afterDir=\"false\" />\n      <change afterPath=\"$PROJECT_DIR$/reader/src/main/java/CsvReader.java\" afterDir=\"false\" />\n      <change afterPath=\"$PROJECT_DIR$/reader/src/main/java/Currency.java\" afterDir=\"false\" />\n      <change afterPath=\"$PROJECT_DIR$/reader/src/main/java/LineProcessor.java\" afterDir=\"false\" />\n      <change afterPath=\"$PROJECT_DIR$/reader/src/main/java/Portfolio.java\" afterDir=\"false\" />\n      <change afterPath=\"$PROJECT_DIR$/reader/src/main/java/ReaderMain.java\" afterDir=\"false\" />\n      <change afterPath=\"$PROJECT_DIR$/reader/src/main/java/Side.java\" afterDir=\"false\" />\n      <change afterPath=\"$PROJECT_DIR$/reader/src/main/java/Stock.java\" afterDir=\"false\" />\n      <change afterPath=\"$PROJECT_DIR$/reader/src/main/java/Strategy.java\" afterDir=\"false\" />\n      <change afterPath=\"$PROJECT_DIR$/reader/src/main/java/Trade.java\" afterDir=\"false\" />\n      <change afterPath=\"$PROJECT_DIR$/reader/src/main/java/User.java\" afterDir=\"false\" />\n      <change afterPath=\"$PROJECT_DIR$/reader/src/main/java/UserStore.java\" afterDir=\"false\" />\n      <change afterPath=\"$PROJECT_DIR$/reader/src/main/resources/log4j2.xml\" afterDir=\"false\" />\n      <change afterPath=\"$PROJECT_DIR$/settings.gradle\" afterDir=\"false\" />\n    </list>\n    <option name=\"SHOW_DIALOG\" value=\"false\" />\n    <option name=\"HIGHLIGHT_CONFLICTS\" value=\"true\" />\n    <option name=\"HIGHLIGHT_NON_ACTIVE_CHANGELIST\" value=\"false\" />\n    <option name=\"LAST_RESOLUTION\" value=\"IGNORE\" />\n  </component>\n  <component name=\"ExternalProjectsData\">\n    <projectState path=\"$PROJECT_DIR$\">\n      <ProjectState />\n    </projectState>\n  </component>\n  <component name=\"FileTemplateManagerImpl\">\n    <option name=\"RECENT_TEMPLATES\">\n      <list>\n        <option value=\"Enum\" />\n        <option value=\"Record\" />\n        <option value=\"Class\" />\n      </list>\n    </option>\n  </component>\n  <component name=\"Git.Settings\">\n    <option name=\"RECENT_GIT_ROOT_PATH\" value=\"$PROJECT_DIR$\" />\n  </component>\n  <component name=\"MarkdownSettingsMigration\">\n    <option name=\"stateVersion\" value=\"1\" />\n  </component>\n  <component name=\"ProjectColorInfo\">{\n  &quot;associatedIndex&quot;: 3\n}</component>\n  <component name=\"ProjectId\" id=\"2l6re86tzQhRz9BGkAjSko2MBBk\" />\n  <component name=\"ProjectLevelVcsManager\" settingsEditedManually=\"true\" />\n  <component name=\"ProjectViewState\">\n    <option name=\"hideEmptyMiddlePackages\" value=\"true\" />\n    <option name=\"showLibraryContents\" value=\"true\" />\n  </component>\n  <component name=\"PropertiesComponent\">{\n  &quot;keyToString&quot;: {\n    &quot;Gradle.PnLCalculator [:ReaderMain.main()].executor&quot;: &quot;Run&quot;,\n    &quot;Gradle.PnLCalculator:reader [:reader:ReaderMain.main()].executor&quot;: &quot;Run&quot;,\n    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,\n    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,\n    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,\n    &quot;git-widget-placeholder&quot;: &quot;main&quot;,\n    &quot;jdk.selected.JAVA_MODULE&quot;: &quot;temurin-21&quot;,\n    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,\n    &quot;last_opened_file_path&quot;: &quot;/home/tr1x/Documents/Learning/programming/PnLCalculator/engine/src/main/resources&quot;\n  }\n}</component>\n  <component name=\"RecentsManager\">\n    <key name=\"CopyFile.RECENT_KEYS\">\n      <recent name=\"$PROJECT_DIR$/engine/src/main/resources\" />\n    </key>\n    <key name=\"MoveFile.RECENT_KEYS\">\n      <recent name=\"$PROJECT_DIR$/reader/src/main/java\" />\n      <recent name=\"$PROJECT_DIR$/reader/src/main/resources\" />\n      <recent name=\"$PROJECT_DIR$/src/main/resources\" />\n    </key>\n    <key name=\"MoveClassesOrPackagesDialog.RECENTS_KEY\">\n      <recent name=\"\" />\n    </key>\n  </component>\n  <component name=\"SharedIndexes\">\n    <attachedChunks>\n      <set>\n        <option value=\"jdk-21.0.1-temurin-21.0.1-e1d2075fd9a7-3a0c0fb7\" />\n      </set>\n    </attachedChunks>\n  </component>\n  <component name=\"SpellCheckerSettings\" RuntimeDictionaries=\"0\" Folders=\"0\" CustomDictionaries=\"0\" DefaultDictionary=\"application-level\" UseSingleDictionary=\"true\" transferred=\"true\" />\n  <component name=\"TaskManager\">\n    <task active=\"true\" id=\"Default\" summary=\"Default task\">\n      <changelist id=\"d4cbb71b-800e-44fc-ac55-d78e368a6dbc\" name=\"Changes\" comment=\"\" />\n      <created>1724511468673</created>\n      <option name=\"number\" value=\"Default\" />\n      <option name=\"presentableId\" value=\"Default\" />\n      <updated>1724511468673</updated>\n    </task>\n    <servers />\n  </component>\n</project>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/.idea/workspace.xml b/.idea/workspace.xml
+--- a/.idea/workspace.xml	(revision e187040cca3e60bfcff04b95ec0113dffb9d9921)
++++ b/.idea/workspace.xml	(date 1732481736232)
+@@ -4,36 +4,29 @@
+     <option name="autoReloadType" value="SELECTIVE" />
+   </component>
+   <component name="ChangeListManager">
+-    <list default="true" id="d4cbb71b-800e-44fc-ac55-d78e368a6dbc" name="Changes" comment="">
+-      <change afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+-      <change afterPath="$PROJECT_DIR$/.idea/gradle.xml" afterDir="false" />
+-      <change afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+-      <change afterPath="$PROJECT_DIR$/.idea/runConfigurations/ReaderMain.xml" afterDir="false" />
+-      <change afterPath="$PROJECT_DIR$/.idea/uiDesigner.xml" afterDir="false" />
+-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+-      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+-      <change afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+-      <change afterPath="$PROJECT_DIR$/build.gradle" afterDir="false" />
+-      <change afterPath="$PROJECT_DIR$/gradle/wrapper/gradle-wrapper.jar" afterDir="false" />
+-      <change afterPath="$PROJECT_DIR$/gradle/wrapper/gradle-wrapper.properties" afterDir="false" />
+-      <change afterPath="$PROJECT_DIR$/gradlew" afterDir="false" />
+-      <change afterPath="$PROJECT_DIR$/gradlew.bat" afterDir="false" />
+-      <change afterPath="$PROJECT_DIR$/reader/src/main/java/Account.java" afterDir="false" />
+-      <change afterPath="$PROJECT_DIR$/reader/src/main/java/Action.java" afterDir="false" />
+-      <change afterPath="$PROJECT_DIR$/reader/src/main/java/Cli.java" afterDir="false" />
+-      <change afterPath="$PROJECT_DIR$/reader/src/main/java/CsvReader.java" afterDir="false" />
+-      <change afterPath="$PROJECT_DIR$/reader/src/main/java/Currency.java" afterDir="false" />
+-      <change afterPath="$PROJECT_DIR$/reader/src/main/java/LineProcessor.java" afterDir="false" />
+-      <change afterPath="$PROJECT_DIR$/reader/src/main/java/Portfolio.java" afterDir="false" />
+-      <change afterPath="$PROJECT_DIR$/reader/src/main/java/ReaderMain.java" afterDir="false" />
+-      <change afterPath="$PROJECT_DIR$/reader/src/main/java/Side.java" afterDir="false" />
+-      <change afterPath="$PROJECT_DIR$/reader/src/main/java/Stock.java" afterDir="false" />
+-      <change afterPath="$PROJECT_DIR$/reader/src/main/java/Strategy.java" afterDir="false" />
+-      <change afterPath="$PROJECT_DIR$/reader/src/main/java/Trade.java" afterDir="false" />
+-      <change afterPath="$PROJECT_DIR$/reader/src/main/java/User.java" afterDir="false" />
+-      <change afterPath="$PROJECT_DIR$/reader/src/main/java/UserStore.java" afterDir="false" />
+-      <change afterPath="$PROJECT_DIR$/reader/src/main/resources/log4j2.xml" afterDir="false" />
+-      <change afterPath="$PROJECT_DIR$/settings.gradle" afterDir="false" />
++    <list default="true" id="d4cbb71b-800e-44fc-ac55-d78e368a6dbc" name="Changes" comment="########50 characters############################&#10;Subject: &#10;&#10;########72 characters##################################################&#10;Problem:&#10;&#10;# Problem, Task, Reason for Commit&#10;&#10;Solution:&#10;&#10;# Solution or List of Changes&#10;&#10;Note:&#10;&#10;# Special instructions, testing steps, rake, etc">
++      <change beforePath="$PROJECT_DIR$/.idea/gradle.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/gradle.xml" afterDir="false" />
++      <change beforePath="$PROJECT_DIR$/.idea/runConfigurations/ReaderMain.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/runConfigurations/ReaderMain.xml" afterDir="false" />
++      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
++      <change beforePath="$PROJECT_DIR$/cli/build.gradle" beforeDir="false" />
++      <change beforePath="$PROJECT_DIR$/cli/src/main/java/org/example/cli/Cli.java" beforeDir="false" />
++      <change beforePath="$PROJECT_DIR$/engine/build.gradle" beforeDir="false" />
++      <change beforePath="$PROJECT_DIR$/engine/src/main/java/org/example/engine/Account.java" beforeDir="false" />
++      <change beforePath="$PROJECT_DIR$/engine/src/main/java/org/example/engine/Portfolio.java" beforeDir="false" />
++      <change beforePath="$PROJECT_DIR$/engine/src/main/java/org/example/engine/Stock.java" beforeDir="false" />
++      <change beforePath="$PROJECT_DIR$/engine/src/main/java/org/example/engine/Strategy.java" beforeDir="false" />
++      <change beforePath="$PROJECT_DIR$/engine/src/main/java/org/example/engine/User.java" beforeDir="false" />
++      <change beforePath="$PROJECT_DIR$/engine/src/main/java/org/example/engine/UserStore.java" beforeDir="false" />
++      <change beforePath="$PROJECT_DIR$/reader/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/reader/build.gradle" afterDir="false" />
++      <change beforePath="$PROJECT_DIR$/reader/src/main/java/org/example/reader/CsvReader.java" beforeDir="false" afterPath="$PROJECT_DIR$/reader/src/main/java/org/example/reader/CsvReader.java" afterDir="false" />
++      <change beforePath="$PROJECT_DIR$/reader/src/main/java/org/example/reader/LineProcessor.java" beforeDir="false" afterPath="$PROJECT_DIR$/reader/src/main/java/org/example/reader/LineProcessor.java" afterDir="false" />
++      <change beforePath="$PROJECT_DIR$/reader/src/main/java/org/example/reader/ReaderMain.java" beforeDir="false" afterPath="$PROJECT_DIR$/reader/src/main/java/org/example/reader/ReaderMain.java" afterDir="false" />
++      <change beforePath="$PROJECT_DIR$/settings.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/settings.gradle" afterDir="false" />
++      <change beforePath="$PROJECT_DIR$/shared/build.gradle" beforeDir="false" />
++      <change beforePath="$PROJECT_DIR$/shared/src/main/java/org/example/shared/Action.java" beforeDir="false" />
++      <change beforePath="$PROJECT_DIR$/shared/src/main/java/org/example/shared/Currency.java" beforeDir="false" />
++      <change beforePath="$PROJECT_DIR$/shared/src/main/java/org/example/shared/Side.java" beforeDir="false" />
++      <change beforePath="$PROJECT_DIR$/shared/src/main/java/org/example/shared/Trade.java" beforeDir="false" />
+     </list>
+     <option name="SHOW_DIALOG" value="false" />
+     <option name="HIGHLIGHT_CONFLICTS" value="true" />
+@@ -44,6 +37,45 @@
+     <projectState path="$PROJECT_DIR$">
+       <ProjectState />
+     </projectState>
++  </component>
++  <component name="ExternalProjectsManager">
++    <system id="GRADLE">
++      <state>
++        <task path="$PROJECT_DIR$">
++          <activation />
++        </task>
++        <task path="$PROJECT_DIR$/reader">
++          <activation />
++        </task>
++        <projects_view>
++          <tree_state>
++            <expand>
++              <path>
++                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
++                <item name="PnLCalculator" type="f1a62948:ProjectNode" />
++              </path>
++              <path>
++                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
++                <item name="PnLCalculator" type="f1a62948:ProjectNode" />
++                <item name="Tasks" type="e4a08cd1:TasksNode" />
++              </path>
++              <path>
++                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
++                <item name="PnLCalculator" type="f1a62948:ProjectNode" />
++                <item name="reader" type="2d1252cf:ModuleNode" />
++              </path>
++              <path>
++                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
++                <item name="PnLCalculator" type="f1a62948:ProjectNode" />
++                <item name="reader" type="2d1252cf:ModuleNode" />
++                <item name="Tasks" type="e4a08cd1:TasksNode" />
++              </path>
++            </expand>
++            <select />
++          </tree_state>
++        </projects_view>
++      </state>
++    </system>
+   </component>
+   <component name="FileTemplateManagerImpl">
+     <option name="RECENT_TEMPLATES">
+@@ -56,6 +88,12 @@
+   </component>
+   <component name="Git.Settings">
+     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
++  </component>
++  <component name="HighlightingSettingsPerFile">
++    <setting file="jar://$USER_HOME$/.sdkman/candidates/java/21.0.1-tem/lib/src.zip!/java.base/java/lang/reflect/Constructor.java" root0="SKIP_INSPECTION" />
++    <setting file="jar://$USER_HOME$/.sdkman/candidates/java/21.0.1-tem/lib/src.zip!/java.base/java/nio/channels/FileChannel.java" root0="SKIP_INSPECTION" />
++    <setting file="jar://$USER_HOME$/.sdkman/candidates/java/21.0.1-tem/lib/src.zip!/java.base/java/util/List.java" root0="SKIP_INSPECTION" />
++    <setting file="jar://$USER_HOME$/.sdkman/candidates/java/21.0.1-tem/lib/src.zip!/java.base/jdk/internal/reflect/ConstructorAccessor.java" root0="SKIP_INSPECTION" />
+   </component>
+   <component name="MarkdownSettingsMigration">
+     <option name="stateVersion" value="1" />
+@@ -69,19 +107,23 @@
+     <option name="hideEmptyMiddlePackages" value="true" />
+     <option name="showLibraryContents" value="true" />
+   </component>
+-  <component name="PropertiesComponent">{
+-  &quot;keyToString&quot;: {
+-    &quot;Gradle.PnLCalculator [:ReaderMain.main()].executor&quot;: &quot;Run&quot;,
+-    &quot;Gradle.PnLCalculator:reader [:reader:ReaderMain.main()].executor&quot;: &quot;Run&quot;,
+-    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+-    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+-    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+-    &quot;jdk.selected.JAVA_MODULE&quot;: &quot;temurin-21&quot;,
+-    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+-    &quot;last_opened_file_path&quot;: &quot;/home/tr1x/Documents/Learning/programming/PnLCalculator/engine/src/main/resources&quot;
++  <component name="PropertiesComponent"><![CDATA[{
++  "keyToString": {
++    "Application.ReaderMain.executor": "Coverage",
++    "Gradle.Build PnLCalculator.executor": "Run",
++    "Gradle.PnLCalculator [:ReaderMain.main()].executor": "Run",
++    "Gradle.PnLCalculator [runApp].executor": "Run",
++    "Gradle.PnLCalculator:reader [:reader:ReaderMain.main()].executor": "Run",
++    "RunOnceActivity.OpenProjectViewOnStart": "true",
++    "RunOnceActivity.ShowReadmeOnStart": "true",
++    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
++    "git-widget-placeholder": "rewrite",
++    "jdk.selected.JAVA_MODULE": "temurin-21",
++    "kotlin-language-version-configured": "true",
++    "last_opened_file_path": "/home/tr1x/Documents/Learning/programming/PnLCalculator/engine/src/main/resources",
++    "settings.editor.selected.configurable": "promo.profiler"
+   }
+-}</component>
++}]]></component>
+   <component name="RecentsManager">
+     <key name="CopyFile.RECENT_KEYS">
+       <recent name="$PROJECT_DIR$/engine/src/main/resources" />
+@@ -95,6 +137,39 @@
+       <recent name="" />
+     </key>
+   </component>
++  <component name="RunManager" selected="Application.ReaderMain">
++    <configuration name="PnLCalculator [runApp]" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
++      <ExternalSystemSettings>
++        <option name="executionName" />
++        <option name="externalProjectPath" value="$PROJECT_DIR$" />
++        <option name="externalSystemIdString" value="GRADLE" />
++        <option name="scriptParameters" />
++        <option name="taskDescriptions">
++          <list />
++        </option>
++        <option name="taskNames">
++          <list>
++            <option value="runApp" />
++          </list>
++        </option>
++        <option name="vmOptions" />
++      </ExternalSystemSettings>
++      <ExternalSystemDebugServerProcess>true</ExternalSystemDebugServerProcess>
++      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
++      <DebugAllEnabled>false</DebugAllEnabled>
++      <RunAsTest>false</RunAsTest>
++      <method v="2" />
++    </configuration>
++    <list>
++      <item itemvalue="Application.ReaderMain" />
++      <item itemvalue="Gradle.PnLCalculator [runApp]" />
++    </list>
++    <recent_temporary>
++      <list>
++        <item itemvalue="Gradle.PnLCalculator [runApp]" />
++      </list>
++    </recent_temporary>
++  </component>
+   <component name="SharedIndexes">
+     <attachedChunks>
+       <set>
+@@ -113,4 +188,7 @@
+     </task>
+     <servers />
+   </component>
++  <component name="com.intellij.coverage.CoverageDataManagerImpl">
++    <SUITE FILE_PATH="coverage/PnLCalculator$ReaderMain.ic" NAME="ReaderMain Coverage Results" MODIFIED="1732472820229" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="idea" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" />
++  </component>
+ </project>
+\ No newline at end of file
+Index: settings.gradle
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>rootProject.name = 'PnLCalculator'\ninclude('reader',\n        'engine',\n        'shared',\n        'cli')\n\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/settings.gradle b/settings.gradle
+--- a/settings.gradle	(revision e187040cca3e60bfcff04b95ec0113dffb9d9921)
++++ b/settings.gradle	(date 1732472758287)
+@@ -1,6 +1,3 @@
+ rootProject.name = 'PnLCalculator'
+-include('reader',
+-        'engine',
+-        'shared',
+-        'cli')
++include('reader')
+ 
+Index: reader/build.gradle
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>plugins {\n    id 'java'\n}\n\ngroup = 'org.example'\nversion = '1.0-SNAPSHOT'\n\nrepositories {\n    mavenCentral()\n}\n\ndependencies {\n    implementation project(\":cli\")\n    implementation project(\":shared\")\n    implementation project(\":engine\")\n    implementation 'org.apache.logging.log4j:log4j-api:2.20.0'\n    implementation 'org.apache.logging.log4j:log4j-core:2.20.0'\n    implementation 'org.apache.logging.log4j:log4j-slf4j-impl:2.20.0'\n    testImplementation platform('org.junit:junit-bom:5.9.1')\n    testImplementation 'org.junit.jupiter:junit-jupiter'\n}\n\ntest {\n    useJUnitPlatform()\n}\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/reader/build.gradle b/reader/build.gradle
+--- a/reader/build.gradle	(revision e187040cca3e60bfcff04b95ec0113dffb9d9921)
++++ b/reader/build.gradle	(date 1732472743017)
+@@ -10,9 +10,6 @@
+ }
+ 
+ dependencies {
+-    implementation project(":cli")
+-    implementation project(":shared")
+-    implementation project(":engine")
+     implementation 'org.apache.logging.log4j:log4j-api:2.20.0'
+     implementation 'org.apache.logging.log4j:log4j-core:2.20.0'
+     implementation 'org.apache.logging.log4j:log4j-slf4j-impl:2.20.0'
+Index: reader/src/main/java/org/example/reader/ReaderMain.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package org.example.reader;\n\nimport org.example.cli.Cli;\nimport org.example.engine.UserStore;\nimport org.slf4j.Logger;\nimport org.slf4j.LoggerFactory;\n\nimport java.time.Clock;\n\nfinal class ReaderMain {\n\n    private static final Logger LOG = LoggerFactory.getLogger(ReaderMain.class);\n\n    public static void main(final String[] args) {\n        LOG.info(\"starting reader\");\n        final long start = Clock.systemUTC().millis();\n        if (args.length < 1)\n        {\n            LOG.warn(\"no file path provided, exiting now\");\n            return;\n        }\n        final String filePath = args[0];\n        if (LOG.isDebugEnabled()) {\n            LOG.debug(\"file path is {}\", filePath);\n        }\n        final UserStore userStore = new UserStore();\n        if (LOG.isDebugEnabled()) {\n            LOG.info(\"reading data in from csv file\");\n        }\n        CsvReader.readCsvFile(filePath, userStore);\n        final long end = Clock.systemUTC().millis();\n        LOG.info(\"took {} ms to load all info from csv\", end - start);\n        final Cli cli = new Cli(userStore);\n        cli.awaitCommands();\n    }\n}\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/reader/src/main/java/org/example/reader/ReaderMain.java b/reader/src/main/java/org/example/reader/ReaderMain.java
+--- a/reader/src/main/java/org/example/reader/ReaderMain.java	(revision e187040cca3e60bfcff04b95ec0113dffb9d9921)
++++ b/reader/src/main/java/org/example/reader/ReaderMain.java	(date 1732480769751)
+@@ -1,7 +1,5 @@
+ package org.example.reader;
+ 
+-import org.example.cli.Cli;
+-import org.example.engine.UserStore;
+ import org.slf4j.Logger;
+ import org.slf4j.LoggerFactory;
+ 
+@@ -13,7 +11,6 @@
+ 
+     public static void main(final String[] args) {
+         LOG.info("starting reader");
+-        final long start = Clock.systemUTC().millis();
+         if (args.length < 1)
+         {
+             LOG.warn("no file path provided, exiting now");
+@@ -23,14 +20,17 @@
+         if (LOG.isDebugEnabled()) {
+             LOG.debug("file path is {}", filePath);
+         }
+-        final UserStore userStore = new UserStore();
+-        if (LOG.isDebugEnabled()) {
+-            LOG.info("reading data in from csv file");
+-        }
+-        CsvReader.readCsvFile(filePath, userStore);
+-        final long end = Clock.systemUTC().millis();
+-        LOG.info("took {} ms to load all info from csv", end - start);
+-        final Cli cli = new Cli(userStore);
+-        cli.awaitCommands();
++
++        long time = 0;
++        for (int i = 0; i < 100; i++) {
++            final long start = Clock.systemUTC().millis();
++            CsvReader.readFile(filePath);
++            final long end = Clock.systemUTC().millis();
++            time += (end - start);
++        }
++
++        time /= 100;
++
++        LOG.info("elapsed time is {}ms", time);
+     }
+ }
