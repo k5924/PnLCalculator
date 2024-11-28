@@ -1,0 +1,238 @@
+Index: reader/src/main/java/org/example/reader/CsvReader.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package org.example.reader;\n\nimport org.slf4j.Logger;\nimport org.slf4j.LoggerFactory;\n\nimport java.io.RandomAccessFile;\nimport java.nio.MappedByteBuffer;\nimport java.nio.channels.FileChannel;\nimport java.util.*;\n\npublic final class CsvReader {\n\n    private static final Logger LOG = LoggerFactory.getLogger(CsvReader.class);\n\n    public static void readFile(final String path) {\n        try (RandomAccessFile raf = new RandomAccessFile(path, \"r\");\n             FileChannel fc = raf.getChannel()) {\n\n            final MappedByteBuffer buffer = fc.map(FileChannel.MapMode.READ_ONLY, 0, fc.size());\n            final int[] wordPositions = new int[13];\n            int startOfLine = 0;\n            int currentWordPos = 0;\n            boolean shouldProcess = false;\n            for (int i = 0; i < buffer.limit(); i++) {\n                final byte b = buffer.get();\n                if (b == '\\n') {\n                    if (shouldProcess) {\n                        final int endOfLine = i - 1;\n                        final int length = endOfLine - startOfLine;\n                        final MappedByteBuffer bufferSlice = buffer.slice(startOfLine, length);\n                        LineProcessor.process(bufferSlice, wordPositions);\n                    }\n                    Arrays.fill(wordPositions, 0);\n                    currentWordPos = 0;\n                    startOfLine = i + 1;\n                    wordPositions[currentWordPos++] = (i + 1) - startOfLine;\n                    shouldProcess = true;\n                }\n                if (b == ',' && shouldProcess) {\n                    wordPositions[currentWordPos++] = (i + 1) - startOfLine;\n                }\n            }\n            final int endOfLine = buffer.limit();\n            final int length = endOfLine - startOfLine;\n            final MappedByteBuffer bufferSlice = buffer.slice(startOfLine, length);\n            LineProcessor.process(bufferSlice, wordPositions);\n            Arrays.fill(wordPositions, 0);\n\n        } catch (final Exception e) {\n            e.printStackTrace();\n        }\n    }\n}\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/reader/src/main/java/org/example/reader/CsvReader.java b/reader/src/main/java/org/example/reader/CsvReader.java
+--- a/reader/src/main/java/org/example/reader/CsvReader.java	(revision 7831c30b77f7b396b992bf47aef05bc305395ecd)
++++ b/reader/src/main/java/org/example/reader/CsvReader.java	(date 1732503962743)
+@@ -7,6 +7,8 @@
+ import java.nio.MappedByteBuffer;
+ import java.nio.channels.FileChannel;
+ import java.util.*;
++import java.util.concurrent.ExecutorService;
++import java.util.concurrent.Executors;
+ 
+ public final class CsvReader {
+ 
+@@ -17,7 +19,9 @@
+              FileChannel fc = raf.getChannel()) {
+ 
+             final MappedByteBuffer buffer = fc.map(FileChannel.MapMode.READ_ONLY, 0, fc.size());
+-            final int[] wordPositions = new int[13];
++            final int numberOfProcs = Runtime.getRuntime().availableProcessors();
++            final List<ToProcess> needComplete = new ArrayList<>();
++            int[] wordPositions = new int[13];
+             int startOfLine = 0;
+             int currentWordPos = 0;
+             boolean shouldProcess = false;
+@@ -28,11 +32,14 @@
+                         final int endOfLine = i - 1;
+                         final int length = endOfLine - startOfLine;
+                         final MappedByteBuffer bufferSlice = buffer.slice(startOfLine, length);
+-                        LineProcessor.process(bufferSlice, wordPositions);
++                        final var t1 = new ToProcess(bufferSlice, wordPositions);
++                        needComplete.add(t1);
++                        // LineProcessor.process(bufferSlice, wordPositions);
+                     }
+-                    Arrays.fill(wordPositions, 0);
++                    // Arrays.fill(wordPositions, 0);
+                     currentWordPos = 0;
+                     startOfLine = i + 1;
++                    wordPositions = new int[13];
+                     wordPositions[currentWordPos++] = (i + 1) - startOfLine;
+                     shouldProcess = true;
+                 }
+@@ -43,8 +50,32 @@
+             final int endOfLine = buffer.limit();
+             final int length = endOfLine - startOfLine;
+             final MappedByteBuffer bufferSlice = buffer.slice(startOfLine, length);
+-            LineProcessor.process(bufferSlice, wordPositions);
+-            Arrays.fill(wordPositions, 0);
++            final var t1 = new ToProcess(bufferSlice, wordPositions);
++            needComplete.add(t1);
++            final int splitSize = (needComplete.size() % numberOfProcs == 0) ?
++                    (needComplete.size() / numberOfProcs) :
++                    (needComplete.size() / numberOfProcs) + 1;
++            List<List<ToProcess>> splits = new ArrayList<>();
++            for (int i = 0; i < needComplete.size(); i += splitSize) {
++                splits.add(needComplete.subList(i, Math.min(i + splitSize, needComplete.size())));
++            }
++
++            // Use ExecutorService for multi-threading
++            ExecutorService executor = Executors.newFixedThreadPool(numberOfProcs);
++
++            for (List<ToProcess> split : splits) {
++                executor.submit(() -> {
++                    // Processing each sublist in a separate thread
++                    for (ToProcess item : split) {
++                        LineProcessor.process(item.slice(), item.positions());
++                    }
++                });
++            }
++
++            // Shutdown the executor
++            executor.shutdown();
++            // LineProcessor.process(bufferSlice, wordPositions);
++            // Arrays.fill(wordPositions, 0);
+ 
+         } catch (final Exception e) {
+             e.printStackTrace();
+Index: .idea/workspace.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<project version=\"4\">\n  <component name=\"AutoImportSettings\">\n    <option name=\"autoReloadType\" value=\"SELECTIVE\" />\n  </component>\n  <component name=\"ChangeListManager\">\n    <list default=\"true\" id=\"d4cbb71b-800e-44fc-ac55-d78e368a6dbc\" name=\"Changes\" comment=\"########50 characters############################&#10;Subject: &#10;&#10;########72 characters##################################################&#10;Problem:&#10;&#10;# Problem, Task, Reason for Commit&#10;&#10;Solution:&#10;&#10;# Solution or List of Changes&#10;&#10;Note:&#10;&#10;# Special instructions, testing steps, rake, etc\">\n      <change beforePath=\"$PROJECT_DIR$/.idea/gradle.xml\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/.idea/gradle.xml\" afterDir=\"false\" />\n      <change beforePath=\"$PROJECT_DIR$/.idea/runConfigurations/ReaderMain.xml\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/.idea/runConfigurations/ReaderMain.xml\" afterDir=\"false\" />\n      <change beforePath=\"$PROJECT_DIR$/.idea/workspace.xml\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/.idea/workspace.xml\" afterDir=\"false\" />\n      <change beforePath=\"$PROJECT_DIR$/README.md\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/README.md\" afterDir=\"false\" />\n      <change beforePath=\"$PROJECT_DIR$/cli/build.gradle\" beforeDir=\"false\" />\n      <change beforePath=\"$PROJECT_DIR$/cli/src/main/java/org/example/cli/Cli.java\" beforeDir=\"false\" />\n      <change beforePath=\"$PROJECT_DIR$/engine/build.gradle\" beforeDir=\"false\" />\n      <change beforePath=\"$PROJECT_DIR$/engine/src/main/java/org/example/engine/Account.java\" beforeDir=\"false\" />\n      <change beforePath=\"$PROJECT_DIR$/engine/src/main/java/org/example/engine/Portfolio.java\" beforeDir=\"false\" />\n      <change beforePath=\"$PROJECT_DIR$/engine/src/main/java/org/example/engine/Stock.java\" beforeDir=\"false\" />\n      <change beforePath=\"$PROJECT_DIR$/engine/src/main/java/org/example/engine/Strategy.java\" beforeDir=\"false\" />\n      <change beforePath=\"$PROJECT_DIR$/engine/src/main/java/org/example/engine/User.java\" beforeDir=\"false\" />\n      <change beforePath=\"$PROJECT_DIR$/engine/src/main/java/org/example/engine/UserStore.java\" beforeDir=\"false\" />\n      <change beforePath=\"$PROJECT_DIR$/reader/build.gradle\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/reader/build.gradle\" afterDir=\"false\" />\n      <change beforePath=\"$PROJECT_DIR$/reader/src/main/java/org/example/reader/CsvReader.java\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/reader/src/main/java/org/example/reader/CsvReader.java\" afterDir=\"false\" />\n      <change beforePath=\"$PROJECT_DIR$/reader/src/main/java/org/example/reader/LineProcessor.java\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/reader/src/main/java/org/example/reader/LineProcessor.java\" afterDir=\"false\" />\n      <change beforePath=\"$PROJECT_DIR$/reader/src/main/java/org/example/reader/ReaderMain.java\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/reader/src/main/java/org/example/reader/ReaderMain.java\" afterDir=\"false\" />\n      <change beforePath=\"$PROJECT_DIR$/settings.gradle\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/settings.gradle\" afterDir=\"false\" />\n      <change beforePath=\"$PROJECT_DIR$/shared/build.gradle\" beforeDir=\"false\" />\n      <change beforePath=\"$PROJECT_DIR$/shared/src/main/java/org/example/shared/Action.java\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/shared/src/main/java/org/example/shared/Action.java\" afterDir=\"false\" />\n      <change beforePath=\"$PROJECT_DIR$/shared/src/main/java/org/example/shared/Currency.java\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/shared/src/main/java/org/example/shared/Currency.java\" afterDir=\"false\" />\n      <change beforePath=\"$PROJECT_DIR$/shared/src/main/java/org/example/shared/Side.java\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/shared/src/main/java/org/example/shared/Side.java\" afterDir=\"false\" />\n      <change beforePath=\"$PROJECT_DIR$/shared/src/main/java/org/example/shared/Trade.java\" beforeDir=\"false\" />\n    </list>\n    <option name=\"SHOW_DIALOG\" value=\"false\" />\n    <option name=\"HIGHLIGHT_CONFLICTS\" value=\"true\" />\n    <option name=\"HIGHLIGHT_NON_ACTIVE_CHANGELIST\" value=\"false\" />\n    <option name=\"LAST_RESOLUTION\" value=\"IGNORE\" />\n  </component>\n  <component name=\"ExternalProjectsData\">\n    <projectState path=\"$PROJECT_DIR$\">\n      <ProjectState />\n    </projectState>\n  </component>\n  <component name=\"ExternalProjectsManager\">\n    <system id=\"GRADLE\">\n      <state>\n        <task path=\"$PROJECT_DIR$\">\n          <activation />\n        </task>\n        <task path=\"$PROJECT_DIR$/reader\">\n          <activation />\n        </task>\n        <projects_view>\n          <tree_state>\n            <expand>\n              <path>\n                <item name=\"\" type=\"6a2764b6:ExternalProjectsStructure$RootNode\" />\n                <item name=\"PnLCalculator\" type=\"f1a62948:ProjectNode\" />\n              </path>\n              <path>\n                <item name=\"\" type=\"6a2764b6:ExternalProjectsStructure$RootNode\" />\n                <item name=\"PnLCalculator\" type=\"f1a62948:ProjectNode\" />\n                <item name=\"Tasks\" type=\"e4a08cd1:TasksNode\" />\n              </path>\n              <path>\n                <item name=\"\" type=\"6a2764b6:ExternalProjectsStructure$RootNode\" />\n                <item name=\"PnLCalculator\" type=\"f1a62948:ProjectNode\" />\n                <item name=\"reader\" type=\"2d1252cf:ModuleNode\" />\n              </path>\n              <path>\n                <item name=\"\" type=\"6a2764b6:ExternalProjectsStructure$RootNode\" />\n                <item name=\"PnLCalculator\" type=\"f1a62948:ProjectNode\" />\n                <item name=\"reader\" type=\"2d1252cf:ModuleNode\" />\n                <item name=\"Tasks\" type=\"e4a08cd1:TasksNode\" />\n              </path>\n            </expand>\n            <select />\n          </tree_state>\n        </projects_view>\n      </state>\n    </system>\n  </component>\n  <component name=\"FileTemplateManagerImpl\">\n    <option name=\"RECENT_TEMPLATES\">\n      <list>\n        <option value=\"Record\" />\n        <option value=\"Class\" />\n        <option value=\"Enum\" />\n      </list>\n    </option>\n  </component>\n  <component name=\"Git.Settings\">\n    <option name=\"RECENT_GIT_ROOT_PATH\" value=\"$PROJECT_DIR$\" />\n  </component>\n  <component name=\"HighlightingSettingsPerFile\">\n    <setting file=\"jar://$USER_HOME$/.sdkman/candidates/java/21.0.1-tem/lib/src.zip!/java.base/java/lang/reflect/Constructor.java\" root0=\"SKIP_INSPECTION\" />\n    <setting file=\"jar://$USER_HOME$/.sdkman/candidates/java/21.0.1-tem/lib/src.zip!/java.base/java/nio/channels/FileChannel.java\" root0=\"SKIP_INSPECTION\" />\n    <setting file=\"jar://$USER_HOME$/.sdkman/candidates/java/21.0.1-tem/lib/src.zip!/java.base/java/util/List.java\" root0=\"SKIP_INSPECTION\" />\n    <setting file=\"jar://$USER_HOME$/.sdkman/candidates/java/21.0.1-tem/lib/src.zip!/java.base/jdk/internal/reflect/ConstructorAccessor.java\" root0=\"SKIP_INSPECTION\" />\n  </component>\n  <component name=\"MarkdownSettingsMigration\">\n    <option name=\"stateVersion\" value=\"1\" />\n  </component>\n  <component name=\"ProjectColorInfo\">{\n  &quot;associatedIndex&quot;: 3\n}</component>\n  <component name=\"ProjectId\" id=\"2l6re86tzQhRz9BGkAjSko2MBBk\" />\n  <component name=\"ProjectLevelVcsManager\" settingsEditedManually=\"true\" />\n  <component name=\"ProjectViewState\">\n    <option name=\"hideEmptyMiddlePackages\" value=\"true\" />\n    <option name=\"showLibraryContents\" value=\"true\" />\n  </component>\n  <component name=\"PropertiesComponent\"><![CDATA[{\n  \"keyToString\": {\n    \"Application.ReaderMain.executor\": \"Coverage\",\n    \"Gradle.Build PnLCalculator.executor\": \"Run\",\n    \"Gradle.PnLCalculator [:ReaderMain.main()].executor\": \"Run\",\n    \"Gradle.PnLCalculator [dependencies].executor\": \"Run\",\n    \"Gradle.PnLCalculator [runApp].executor\": \"Run\",\n    \"Gradle.PnLCalculator:reader [:reader:ReaderMain.main()].executor\": \"Run\",\n    \"RunOnceActivity.OpenProjectViewOnStart\": \"true\",\n    \"RunOnceActivity.ShowReadmeOnStart\": \"true\",\n    \"SHARE_PROJECT_CONFIGURATION_FILES\": \"true\",\n    \"git-widget-placeholder\": \"rewrite\",\n    \"jdk.selected.JAVA_MODULE\": \"temurin-21\",\n    \"kotlin-language-version-configured\": \"true\",\n    \"last_opened_file_path\": \"/home/tr1x/Documents/Learning/programming/PnLCalculator/engine/src/main/resources\",\n    \"settings.editor.selected.configurable\": \"promo.profiler\"\n  }\n}]]></component>\n  <component name=\"RecentsManager\">\n    <key name=\"CopyFile.RECENT_KEYS\">\n      <recent name=\"$PROJECT_DIR$/engine/src/main/resources\" />\n    </key>\n    <key name=\"MoveFile.RECENT_KEYS\">\n      <recent name=\"$PROJECT_DIR$/reader/src/main/java\" />\n      <recent name=\"$PROJECT_DIR$/reader/src/main/resources\" />\n      <recent name=\"$PROJECT_DIR$/src/main/resources\" />\n    </key>\n    <key name=\"MoveClassesOrPackagesDialog.RECENTS_KEY\">\n      <recent name=\"\" />\n    </key>\n  </component>\n  <component name=\"RunManager\" selected=\"Application.ReaderMain\">\n    <configuration name=\"PnLCalculator [dependencies]\" type=\"GradleRunConfiguration\" factoryName=\"Gradle\" temporary=\"true\">\n      <ExternalSystemSettings>\n        <option name=\"executionName\" />\n        <option name=\"externalProjectPath\" value=\"$PROJECT_DIR$\" />\n        <option name=\"externalSystemIdString\" value=\"GRADLE\" />\n        <option name=\"scriptParameters\" />\n        <option name=\"taskDescriptions\">\n          <list />\n        </option>\n        <option name=\"taskNames\">\n          <list>\n            <option value=\"dependencies\" />\n          </list>\n        </option>\n        <option name=\"vmOptions\" />\n      </ExternalSystemSettings>\n      <ExternalSystemDebugServerProcess>true</ExternalSystemDebugServerProcess>\n      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>\n      <DebugAllEnabled>false</DebugAllEnabled>\n      <RunAsTest>false</RunAsTest>\n      <method v=\"2\" />\n    </configuration>\n    <configuration name=\"PnLCalculator [runApp]\" type=\"GradleRunConfiguration\" factoryName=\"Gradle\" temporary=\"true\">\n      <ExternalSystemSettings>\n        <option name=\"executionName\" />\n        <option name=\"externalProjectPath\" value=\"$PROJECT_DIR$\" />\n        <option name=\"externalSystemIdString\" value=\"GRADLE\" />\n        <option name=\"scriptParameters\" />\n        <option name=\"taskDescriptions\">\n          <list />\n        </option>\n        <option name=\"taskNames\">\n          <list>\n            <option value=\"runApp\" />\n          </list>\n        </option>\n        <option name=\"vmOptions\" />\n      </ExternalSystemSettings>\n      <ExternalSystemDebugServerProcess>true</ExternalSystemDebugServerProcess>\n      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>\n      <DebugAllEnabled>false</DebugAllEnabled>\n      <RunAsTest>false</RunAsTest>\n      <method v=\"2\" />\n    </configuration>\n    <list>\n      <item itemvalue=\"Application.ReaderMain\" />\n      <item itemvalue=\"Gradle.PnLCalculator [dependencies]\" />\n      <item itemvalue=\"Gradle.PnLCalculator [runApp]\" />\n    </list>\n    <recent_temporary>\n      <list>\n        <item itemvalue=\"Gradle.PnLCalculator [dependencies]\" />\n        <item itemvalue=\"Gradle.PnLCalculator [runApp]\" />\n      </list>\n    </recent_temporary>\n  </component>\n  <component name=\"SharedIndexes\">\n    <attachedChunks>\n      <set>\n        <option value=\"jdk-21.0.1-temurin-21.0.1-e1d2075fd9a7-3a0c0fb7\" />\n      </set>\n    </attachedChunks>\n  </component>\n  <component name=\"SpellCheckerSettings\" RuntimeDictionaries=\"0\" Folders=\"0\" CustomDictionaries=\"0\" DefaultDictionary=\"application-level\" UseSingleDictionary=\"true\" transferred=\"true\" />\n  <component name=\"TaskManager\">\n    <task active=\"true\" id=\"Default\" summary=\"Default task\">\n      <changelist id=\"d4cbb71b-800e-44fc-ac55-d78e368a6dbc\" name=\"Changes\" comment=\"\" />\n      <created>1724511468673</created>\n      <option name=\"number\" value=\"Default\" />\n      <option name=\"presentableId\" value=\"Default\" />\n      <updated>1724511468673</updated>\n    </task>\n    <servers />\n  </component>\n  <component name=\"XDebuggerManager\">\n    <breakpoint-manager>\n      <breakpoints>\n        <line-breakpoint enabled=\"true\" type=\"java-line\">\n          <url>file://$PROJECT_DIR$/reader/src/main/java/org/example/reader/CsvReader.java</url>\n          <line>45</line>\n          <option name=\"timeStamp\" value=\"15\" />\n        </line-breakpoint>\n        <line-breakpoint enabled=\"true\" type=\"java-line\">\n          <url>file://$PROJECT_DIR$/reader/src/main/java/org/example/reader/LineProcessor.java</url>\n          <line>24</line>\n          <option name=\"timeStamp\" value=\"22\" />\n        </line-breakpoint>\n      </breakpoints>\n    </breakpoint-manager>\n  </component>\n  <component name=\"com.intellij.coverage.CoverageDataManagerImpl\">\n    <SUITE FILE_PATH=\"coverage/PnLCalculator$ReaderMain.ic\" NAME=\"ReaderMain Coverage Results\" MODIFIED=\"1732472820229\" SOURCE_PROVIDER=\"com.intellij.coverage.DefaultCoverageFileProvider\" RUNNER=\"idea\" COVERAGE_BY_TEST_ENABLED=\"false\" COVERAGE_TRACING_ENABLED=\"false\" />\n  </component>\n</project>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/.idea/workspace.xml b/.idea/workspace.xml
+--- a/.idea/workspace.xml	(revision 7831c30b77f7b396b992bf47aef05bc305395ecd)
++++ b/.idea/workspace.xml	(date 1732503614352)
+@@ -5,29 +5,10 @@
+   </component>
+   <component name="ChangeListManager">
+     <list default="true" id="d4cbb71b-800e-44fc-ac55-d78e368a6dbc" name="Changes" comment="########50 characters############################&#10;Subject: &#10;&#10;########72 characters##################################################&#10;Problem:&#10;&#10;# Problem, Task, Reason for Commit&#10;&#10;Solution:&#10;&#10;# Solution or List of Changes&#10;&#10;Note:&#10;&#10;# Special instructions, testing steps, rake, etc">
+-      <change beforePath="$PROJECT_DIR$/.idea/gradle.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/gradle.xml" afterDir="false" />
+-      <change beforePath="$PROJECT_DIR$/.idea/runConfigurations/ReaderMain.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/runConfigurations/ReaderMain.xml" afterDir="false" />
++      <change afterPath="$PROJECT_DIR$/reader/src/main/java/org/example/reader/ToProcess.java" afterDir="false" />
+       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+-      <change beforePath="$PROJECT_DIR$/cli/build.gradle" beforeDir="false" />
+-      <change beforePath="$PROJECT_DIR$/cli/src/main/java/org/example/cli/Cli.java" beforeDir="false" />
+-      <change beforePath="$PROJECT_DIR$/engine/build.gradle" beforeDir="false" />
+-      <change beforePath="$PROJECT_DIR$/engine/src/main/java/org/example/engine/Account.java" beforeDir="false" />
+-      <change beforePath="$PROJECT_DIR$/engine/src/main/java/org/example/engine/Portfolio.java" beforeDir="false" />
+-      <change beforePath="$PROJECT_DIR$/engine/src/main/java/org/example/engine/Stock.java" beforeDir="false" />
+-      <change beforePath="$PROJECT_DIR$/engine/src/main/java/org/example/engine/Strategy.java" beforeDir="false" />
+-      <change beforePath="$PROJECT_DIR$/engine/src/main/java/org/example/engine/User.java" beforeDir="false" />
+-      <change beforePath="$PROJECT_DIR$/engine/src/main/java/org/example/engine/UserStore.java" beforeDir="false" />
+-      <change beforePath="$PROJECT_DIR$/reader/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/reader/build.gradle" afterDir="false" />
+       <change beforePath="$PROJECT_DIR$/reader/src/main/java/org/example/reader/CsvReader.java" beforeDir="false" afterPath="$PROJECT_DIR$/reader/src/main/java/org/example/reader/CsvReader.java" afterDir="false" />
+-      <change beforePath="$PROJECT_DIR$/reader/src/main/java/org/example/reader/LineProcessor.java" beforeDir="false" afterPath="$PROJECT_DIR$/reader/src/main/java/org/example/reader/LineProcessor.java" afterDir="false" />
+       <change beforePath="$PROJECT_DIR$/reader/src/main/java/org/example/reader/ReaderMain.java" beforeDir="false" afterPath="$PROJECT_DIR$/reader/src/main/java/org/example/reader/ReaderMain.java" afterDir="false" />
+-      <change beforePath="$PROJECT_DIR$/settings.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/settings.gradle" afterDir="false" />
+-      <change beforePath="$PROJECT_DIR$/shared/build.gradle" beforeDir="false" />
+-      <change beforePath="$PROJECT_DIR$/shared/src/main/java/org/example/shared/Action.java" beforeDir="false" afterPath="$PROJECT_DIR$/shared/src/main/java/org/example/shared/Action.java" afterDir="false" />
+-      <change beforePath="$PROJECT_DIR$/shared/src/main/java/org/example/shared/Currency.java" beforeDir="false" afterPath="$PROJECT_DIR$/shared/src/main/java/org/example/shared/Currency.java" afterDir="false" />
+-      <change beforePath="$PROJECT_DIR$/shared/src/main/java/org/example/shared/Side.java" beforeDir="false" afterPath="$PROJECT_DIR$/shared/src/main/java/org/example/shared/Side.java" afterDir="false" />
+-      <change beforePath="$PROJECT_DIR$/shared/src/main/java/org/example/shared/Trade.java" beforeDir="false" />
+     </list>
+     <option name="SHOW_DIALOG" value="false" />
+     <option name="HIGHLIGHT_CONFLICTS" value="true" />
+@@ -81,9 +62,9 @@
+   <component name="FileTemplateManagerImpl">
+     <option name="RECENT_TEMPLATES">
+       <list>
+-        <option value="Record" />
+         <option value="Class" />
+         <option value="Enum" />
++        <option value="Record" />
+       </list>
+     </option>
+   </component>
+@@ -108,24 +89,24 @@
+     <option name="hideEmptyMiddlePackages" value="true" />
+     <option name="showLibraryContents" value="true" />
+   </component>
+-  <component name="PropertiesComponent"><![CDATA[{
+-  "keyToString": {
+-    "Application.ReaderMain.executor": "Coverage",
+-    "Gradle.Build PnLCalculator.executor": "Run",
+-    "Gradle.PnLCalculator [:ReaderMain.main()].executor": "Run",
+-    "Gradle.PnLCalculator [dependencies].executor": "Run",
+-    "Gradle.PnLCalculator [runApp].executor": "Run",
+-    "Gradle.PnLCalculator:reader [:reader:ReaderMain.main()].executor": "Run",
+-    "RunOnceActivity.OpenProjectViewOnStart": "true",
+-    "RunOnceActivity.ShowReadmeOnStart": "true",
+-    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
+-    "git-widget-placeholder": "rewrite",
+-    "jdk.selected.JAVA_MODULE": "temurin-21",
+-    "kotlin-language-version-configured": "true",
+-    "last_opened_file_path": "/home/tr1x/Documents/Learning/programming/PnLCalculator/engine/src/main/resources",
+-    "settings.editor.selected.configurable": "promo.profiler"
++  <component name="PropertiesComponent">{
++  &quot;keyToString&quot;: {
++    &quot;Application.ReaderMain.executor&quot;: &quot;Coverage&quot;,
++    &quot;Gradle.Build PnLCalculator.executor&quot;: &quot;Run&quot;,
++    &quot;Gradle.PnLCalculator [:ReaderMain.main()].executor&quot;: &quot;Run&quot;,
++    &quot;Gradle.PnLCalculator [dependencies].executor&quot;: &quot;Run&quot;,
++    &quot;Gradle.PnLCalculator [runApp].executor&quot;: &quot;Run&quot;,
++    &quot;Gradle.PnLCalculator:reader [:reader:ReaderMain.main()].executor&quot;: &quot;Run&quot;,
++    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
++    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
++    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
++    &quot;git-widget-placeholder&quot;: &quot;rewrite&quot;,
++    &quot;jdk.selected.JAVA_MODULE&quot;: &quot;temurin-21&quot;,
++    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
++    &quot;last_opened_file_path&quot;: &quot;/home/tr1x/Documents/Learning/programming/PnLCalculator/engine/src/main/resources&quot;,
++    &quot;settings.editor.selected.configurable&quot;: &quot;promo.profiler&quot;
+   }
+-}]]></component>
++}</component>
+   <component name="RecentsManager">
+     <key name="CopyFile.RECENT_KEYS">
+       <recent name="$PROJECT_DIR$/engine/src/main/resources" />
+@@ -219,13 +200,8 @@
+       <breakpoints>
+         <line-breakpoint enabled="true" type="java-line">
+           <url>file://$PROJECT_DIR$/reader/src/main/java/org/example/reader/CsvReader.java</url>
+-          <line>45</line>
++          <line>52</line>
+           <option name="timeStamp" value="15" />
+-        </line-breakpoint>
+-        <line-breakpoint enabled="true" type="java-line">
+-          <url>file://$PROJECT_DIR$/reader/src/main/java/org/example/reader/LineProcessor.java</url>
+-          <line>24</line>
+-          <option name="timeStamp" value="22" />
+         </line-breakpoint>
+       </breakpoints>
+     </breakpoint-manager>
+Index: reader/src/main/java/org/example/reader/ToProcess.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/reader/src/main/java/org/example/reader/ToProcess.java b/reader/src/main/java/org/example/reader/ToProcess.java
+new file mode 100644
+--- /dev/null	(date 1732503290581)
++++ b/reader/src/main/java/org/example/reader/ToProcess.java	(date 1732503290581)
+@@ -0,0 +1,6 @@
++package org.example.reader;
++
++import java.nio.MappedByteBuffer;
++
++public record ToProcess(MappedByteBuffer slice, int[] positions) {
++}
+Index: reader/src/main/java/org/example/reader/ReaderMain.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package org.example.reader;\n\nimport org.slf4j.Logger;\nimport org.slf4j.LoggerFactory;\n\nimport java.time.Clock;\n\nfinal class ReaderMain {\n\n    private static final Logger LOG = LoggerFactory.getLogger(ReaderMain.class);\n\n    public static void main(final String[] args) {\n        LOG.info(\"starting reader\");\n        if (args.length < 1) {\n            LOG.warn(\"no file path provided, exiting now\");\n            return;\n        }\n        final String filePath = args[0];\n        if (LOG.isDebugEnabled()) {\n            LOG.debug(\"file path is {}\", filePath);\n        }\n\n        final long start = Clock.systemUTC().millis();\n        CsvReader.readFile(filePath);\n        final long end = Clock.systemUTC().millis();\n\n        LOG.info(\"elapsed time is {}ms\", end - start);\n    }\n}\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/reader/src/main/java/org/example/reader/ReaderMain.java b/reader/src/main/java/org/example/reader/ReaderMain.java
+--- a/reader/src/main/java/org/example/reader/ReaderMain.java	(revision 7831c30b77f7b396b992bf47aef05bc305395ecd)
++++ b/reader/src/main/java/org/example/reader/ReaderMain.java	(date 1732502946087)
+@@ -20,10 +20,16 @@
+             LOG.debug("file path is {}", filePath);
+         }
+ 
+-        final long start = Clock.systemUTC().millis();
+-        CsvReader.readFile(filePath);
+-        final long end = Clock.systemUTC().millis();
++        long time = 0;
++        for (int i = 0; i < 100; i++) {
++            final long start = Clock.systemUTC().millis();
++            CsvReader.readFile(filePath);
++            final long end = Clock.systemUTC().millis();
++            time += (end - start);
++        }
+ 
+-        LOG.info("elapsed time is {}ms", end - start);
++        time /= 100;
++
++        LOG.info("elapsed time is {}ms", time);
+     }
+ }

@@ -1,5 +1,6 @@
 package org.example.reader;
 
+import org.example.engine.TradeQueryingService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,10 +21,16 @@ final class ReaderMain {
             LOG.debug("file path is {}", filePath);
         }
 
+        long elapsed = 0;
         final long start = Clock.systemUTC().millis();
-        CsvReader.readFile(filePath);
+        final TradeQueryingService tradeQueryingService = new TradeQueryingService();
+        final TradeIndexingService tradeIndexingService = new TradeIndexingService(tradeQueryingService);
+        final CsvReader reader = new CsvReader(tradeIndexingService);
+        reader.readFile(filePath);
+        tradeIndexingService.finishProcessingTrades();
+        tradeIndexingService.makeTradesQueryable();
         final long end = Clock.systemUTC().millis();
-
-        LOG.info("elapsed time is {}ms", end - start);
+        elapsed += end - start;
+        LOG.info("elapsed time is {}ms", elapsed);
     }
 }

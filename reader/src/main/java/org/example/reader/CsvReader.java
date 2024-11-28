@@ -6,48 +6,83 @@ import org.slf4j.LoggerFactory;
 import java.io.RandomAccessFile;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
-import java.util.*;
+import java.util.concurrent.*;
 
 public final class CsvReader {
 
     private static final Logger LOG = LoggerFactory.getLogger(CsvReader.class);
+    private final TradeIndexingService tradeIndexingService;
 
-    public static void readFile(final String path) {
+    public CsvReader(final TradeIndexingService tradeIndexingService) {
+        this.tradeIndexingService = tradeIndexingService;
+    }
+
+    public void readFile(final String path) {
         try (RandomAccessFile raf = new RandomAccessFile(path, "r");
              FileChannel fc = raf.getChannel()) {
 
-            final MappedByteBuffer buffer = fc.map(FileChannel.MapMode.READ_ONLY, 0, fc.size());
-            final int[] wordPositions = new int[13];
-            int startOfLine = 0;
-            int currentWordPos = 0;
-            boolean shouldProcess = false;
-            for (int i = 0; i < buffer.limit(); i++) {
-                final byte b = buffer.get();
-                if (b == '\n') {
-                    if (shouldProcess) {
-                        final int endOfLine = i - 1;
-                        final int length = endOfLine - startOfLine;
-                        final MappedByteBuffer bufferSlice = buffer.slice(startOfLine, length);
-                        LineProcessor.process(bufferSlice, wordPositions);
-                    }
-                    Arrays.fill(wordPositions, 0);
-                    currentWordPos = 0;
-                    startOfLine = i + 1;
-                    wordPositions[currentWordPos++] = (i + 1) - startOfLine;
-                    shouldProcess = true;
-                }
-                if (b == ',' && shouldProcess) {
-                    wordPositions[currentWordPos++] = (i + 1) - startOfLine;
-                }
+            final MappedByteBuffer initialBuffer = fc.map(FileChannel.MapMode.READ_ONLY, 0, fc.size());
+            final int endOfFirstLine = findPositionAfterNewLine(initialBuffer, 0);
+            final MappedByteBuffer contentBuffer = initialBuffer.slice(endOfFirstLine, initialBuffer.limit() - endOfFirstLine);
+            final int numberOfProcessors = Runtime.getRuntime().availableProcessors();
+            final Worker[] workers = new Worker[numberOfProcessors];
+            final int averageSize = contentBuffer.limit() % numberOfProcessors == 0 ? contentBuffer.limit() / numberOfProcessors : (contentBuffer.limit() + 1) / numberOfProcessors;
+            int startPos = 0;
+            for (int i = 0; i < numberOfProcessors - 1; i++) {
+                contentBuffer.position(startPos);
+                final int positionToSearchFrom = averageSize + startPos;
+                final int positionBeforeNewLine = findPositionBeforeNewLine(contentBuffer, positionToSearchFrom);
+                final int positionToSliceAt = positionToSearchFrom + positionBeforeNewLine;
+                final int length = positionToSliceAt - startPos;
+                final MappedByteBuffer slice = contentBuffer.slice(startPos, length);
+                final Worker worker = new Worker(tradeIndexingService);
+                worker.setSlice(slice);
+                workers[i] = worker;
+                startPos += length + 3;
             }
-            final int endOfLine = buffer.limit();
-            final int length = endOfLine - startOfLine;
-            final MappedByteBuffer bufferSlice = buffer.slice(startOfLine, length);
-            LineProcessor.process(bufferSlice, wordPositions);
-            Arrays.fill(wordPositions, 0);
+            contentBuffer.position(startPos);
+            final int length = contentBuffer.limit() - startPos;
+            final MappedByteBuffer slice = contentBuffer.slice(startPos, length);
+            final Worker worker = new Worker(tradeIndexingService);
+            worker.setSlice(slice);
+            workers[numberOfProcessors - 1] = worker;
 
+            final ExecutorService executorService = Executors.newFixedThreadPool(numberOfProcessors);
+            for (int i = 0; i < numberOfProcessors; i++) {
+                final Worker work = workers[i];
+                executorService.submit(work::processSlice);
+            }
+            executorService.shutdown();
+            final boolean finished = executorService.awaitTermination(60, TimeUnit.SECONDS);
+            if (!finished) {
+                executorService.shutdownNow();
+            }
         } catch (final Exception e) {
             e.printStackTrace();
         }
+    }
+
+    private static int findPositionBeforeNewLine(final MappedByteBuffer buffer, final int searchingPosition) {
+        buffer.position(searchingPosition);
+        int positionOfBeforeNewLine = 0;
+        for (int i = 0; i < buffer.limit(); i++) {
+            if (buffer.get() == '\r') {
+                positionOfBeforeNewLine = i - 1;
+                break;
+            }
+        }
+        return positionOfBeforeNewLine;
+    }
+
+    private static int findPositionAfterNewLine(final MappedByteBuffer buffer, final int searchingPosition) {
+        buffer.position(searchingPosition);
+        int positionAfterNewLine = 0;
+        for (int i = 0; i < buffer.limit(); i++) {
+            if (buffer.get() == '\r') {
+                positionAfterNewLine = i + 2;
+                break;
+            }
+        }
+        return positionAfterNewLine;
     }
 }
