@@ -21,6 +21,8 @@ final class ReaderMain {
             LOG.debug("file path is {}", filePath);
         }
 
+        long min = Long.MAX_VALUE;
+        long max = Long.MIN_VALUE;
         long elapsed = 0;
         final int numberOfProcessors = Runtime.getRuntime().availableProcessors();
         final TradeQueryingService tradeQueryingService = new TradeQueryingService(numberOfProcessors);
@@ -35,8 +37,11 @@ final class ReaderMain {
             tradeIndexingService.makeTradesQueryable();
             tradeQueryingService.clear();
             final long end = Clock.systemUTC().millis();
-            elapsed += end - start;
+            final long time = end - start;
+            elapsed += time;
+            min = Math.min(time, min);
+            max = Math.max(time, max);
         }
-        LOG.info("average elapsed time over 100 runs is {}ms", elapsed / 100);
+        LOG.info("average elapsed time over 100 runs is {}ms, min was {}ms, max was {}ms", elapsed / 100, min, max);
     }
 }
