@@ -19,4 +19,15 @@ public enum Currency {
     public boolean matches(final byte[] input) {
         return Arrays.equals(input, encoding);
     }
+
+    public double conversion() {
+        return switch (this) {
+            case GBP -> 1.32;
+            case JPY -> 0.0069;
+            case KRW -> 0.00075;
+            case NOK -> 0.096;
+            case EUR -> 1.12;
+            case USD -> 1.0;
+        };
+    }
 }

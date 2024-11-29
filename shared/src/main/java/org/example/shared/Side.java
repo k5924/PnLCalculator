@@ -14,6 +14,10 @@ public enum Side {
         return this.encoding == input;
     }
 
+    public int multiplier() {
+        return this == B ? -1 : 1;
+    }
+
     public static Side fromByte(final byte input) {
         for (Side side : values()) {
             if (side.matches(input)) {

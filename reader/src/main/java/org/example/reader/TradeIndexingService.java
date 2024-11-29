@@ -1,9 +1,7 @@
 package org.example.reader;
 
-import org.example.engine.TradeQueryingService;
 import org.example.shared.ConvertedTrade;
 
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -12,14 +10,14 @@ public final class TradeIndexingService {
     private final ConcurrentMap<String, ConvertedTrade> newTrades;
     private final ConcurrentMap<String, ConvertedTrade> amendedTrades;
     private final ConcurrentMap<String, ConvertedTrade> cancelledTrades;
-    private final TradeQueryingService tradeQueryingService;
+    private final TradeInserterPool tradeInserterPool;
 
-    public TradeIndexingService(final TradeQueryingService tradeQueryingService) {
-        final int numberOfProcessors = Runtime.getRuntime().availableProcessors();
+    public TradeIndexingService(final TradeInserterPool tradeInserterPool,
+                                final int numberOfProcessors) {
         this.newTrades = new ConcurrentHashMap<>(100000, 0.65F, numberOfProcessors);
         this.amendedTrades = new ConcurrentHashMap<>(100000, 0.65F, numberOfProcessors);
         this.cancelledTrades = new ConcurrentHashMap<>(100000, 0.65F, numberOfProcessors);
-        this.tradeQueryingService = tradeQueryingService;
+        this.tradeInserterPool = tradeInserterPool;
     }
 
     public void indexTrade(final ConvertedTrade trade) {
@@ -31,25 +29,26 @@ public final class TradeIndexingService {
     }
 
     public void finishProcessingTrades() {
-        for (final Map.Entry<String, ConvertedTrade> entry : cancelledTrades.entrySet()) {
-            final String tradeId = entry.getKey();
+        for (final String tradeId : cancelledTrades.keySet()) {
             newTrades.remove(tradeId);
             amendedTrades.remove(tradeId);
         }
         cancelledTrades.clear();
-        for (final Map.Entry<String, ConvertedTrade> entry : amendedTrades.entrySet()) {
-            final String tradeId = entry.getKey();
+        for (final String tradeId : amendedTrades.keySet()) {
             newTrades.remove(tradeId);
         }
     }
 
     public void makeTradesQueryable() {
         for (final ConvertedTrade trade : amendedTrades.values()) {
-            tradeQueryingService.makeTradeQueryable(trade);
+            tradeInserterPool.submitTrade(trade);
         }
+        amendedTrades.clear();
         for (final ConvertedTrade trade : newTrades.values()) {
-            tradeQueryingService.makeTradeQueryable(trade);
+            tradeInserterPool.submitTrade(trade);
         }
+        newTrades.clear();
+        tradeInserterPool.doWork();
     }
 
 }

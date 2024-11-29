@@ -22,15 +22,21 @@ final class ReaderMain {
         }
 
         long elapsed = 0;
-        final long start = Clock.systemUTC().millis();
-        final TradeQueryingService tradeQueryingService = new TradeQueryingService();
-        final TradeIndexingService tradeIndexingService = new TradeIndexingService(tradeQueryingService);
-        final CsvReader reader = new CsvReader(tradeIndexingService);
-        reader.readFile(filePath);
-        tradeIndexingService.finishProcessingTrades();
-        tradeIndexingService.makeTradesQueryable();
-        final long end = Clock.systemUTC().millis();
-        elapsed += end - start;
-        LOG.info("elapsed time is {}ms", elapsed);
+        final int numberOfProcessors = Runtime.getRuntime().availableProcessors();
+        final TradeQueryingService tradeQueryingService = new TradeQueryingService(numberOfProcessors);
+        final TradeInserterPool tradeInserterPool = new TradeInserterPool(numberOfProcessors, tradeQueryingService);
+        final TradeIndexingService tradeIndexingService = new TradeIndexingService(tradeInserterPool, numberOfProcessors);
+        final WorkerPool workerPool = new WorkerPool(tradeIndexingService, numberOfProcessors);
+        final CsvReader reader = new CsvReader(workerPool, numberOfProcessors);
+        for (int i = 0; i < 100; i++) {
+            final long start = Clock.systemUTC().millis();
+            reader.readFile(filePath);
+            tradeIndexingService.finishProcessingTrades();
+            tradeIndexingService.makeTradesQueryable();
+            tradeQueryingService.clear();
+            final long end = Clock.systemUTC().millis();
+            elapsed += end - start;
+        }
+        LOG.info("average elapsed time over 100 runs is {}ms", elapsed / 100);
     }
 }

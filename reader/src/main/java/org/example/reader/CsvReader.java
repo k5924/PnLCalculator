@@ -1,20 +1,18 @@
 package org.example.reader;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.RandomAccessFile;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
-import java.util.concurrent.*;
 
 public final class CsvReader {
 
-    private static final Logger LOG = LoggerFactory.getLogger(CsvReader.class);
-    private final TradeIndexingService tradeIndexingService;
+    private final WorkerPool workerPool;
+    private final int numberOfProcessors;
 
-    public CsvReader(final TradeIndexingService tradeIndexingService) {
-        this.tradeIndexingService = tradeIndexingService;
+    public CsvReader(final WorkerPool workerPool,
+                     final int numberOfProcessors) {
+        this.workerPool = workerPool;
+        this.numberOfProcessors = numberOfProcessors;
     }
 
     public void readFile(final String path) {
@@ -22,51 +20,34 @@ public final class CsvReader {
              FileChannel fc = raf.getChannel()) {
 
             final MappedByteBuffer initialBuffer = fc.map(FileChannel.MapMode.READ_ONLY, 0, fc.size());
-            final int endOfFirstLine = findPositionAfterNewLine(initialBuffer, 0);
-            final MappedByteBuffer contentBuffer = initialBuffer.slice(endOfFirstLine, initialBuffer.limit() - endOfFirstLine);
-            final int numberOfProcessors = Runtime.getRuntime().availableProcessors();
-            final Worker[] workers = new Worker[numberOfProcessors];
-            final int averageSize = contentBuffer.limit() % numberOfProcessors == 0 ? contentBuffer.limit() / numberOfProcessors : (contentBuffer.limit() + 1) / numberOfProcessors;
-            int startPos = 0;
+            final int endOfFirstLine = findPositionAfterNewLine(initialBuffer);
+            final int adjustedLength = initialBuffer.limit() - endOfFirstLine;
+            final int averageSize = adjustedLength % numberOfProcessors == 0 ? adjustedLength / numberOfProcessors : (adjustedLength + 1) / numberOfProcessors;
+            int startPos = endOfFirstLine;
             for (int i = 0; i < numberOfProcessors - 1; i++) {
-                contentBuffer.position(startPos);
                 final int positionToSearchFrom = averageSize + startPos;
-                final int positionBeforeNewLine = findPositionBeforeNewLine(contentBuffer, positionToSearchFrom);
+                final int positionBeforeNewLine = findPositionBeforeNewLine(initialBuffer, positionToSearchFrom);
                 final int positionToSliceAt = positionToSearchFrom + positionBeforeNewLine;
                 final int length = positionToSliceAt - startPos;
-                final MappedByteBuffer slice = contentBuffer.slice(startPos, length);
-                final Worker worker = new Worker(tradeIndexingService);
-                worker.setSlice(slice);
-                workers[i] = worker;
+                final Worker worker = workerPool.get();
+                worker.setData(initialBuffer, startPos, length);
                 startPos += length + 3;
             }
-            contentBuffer.position(startPos);
-            final int length = contentBuffer.limit() - startPos;
-            final MappedByteBuffer slice = contentBuffer.slice(startPos, length);
-            final Worker worker = new Worker(tradeIndexingService);
-            worker.setSlice(slice);
-            workers[numberOfProcessors - 1] = worker;
+            final int length = initialBuffer.limit() - startPos;
+            final Worker worker = workerPool.get();
+            worker.setData(initialBuffer, startPos, length);
 
-            final ExecutorService executorService = Executors.newFixedThreadPool(numberOfProcessors);
-            for (int i = 0; i < numberOfProcessors; i++) {
-                final Worker work = workers[i];
-                executorService.submit(work::processSlice);
-            }
-            executorService.shutdown();
-            final boolean finished = executorService.awaitTermination(60, TimeUnit.SECONDS);
-            if (!finished) {
-                executorService.shutdownNow();
-            }
+            workerPool.doWork();
+
         } catch (final Exception e) {
             e.printStackTrace();
         }
     }
 
-    private static int findPositionBeforeNewLine(final MappedByteBuffer buffer, final int searchingPosition) {
-        buffer.position(searchingPosition);
+    private static int findPositionBeforeNewLine(final MappedByteBuffer buffer, final int offset) {
         int positionOfBeforeNewLine = 0;
-        for (int i = 0; i < buffer.limit(); i++) {
-            if (buffer.get() == '\r') {
+        for (int i = 0; i < buffer.limit() - offset; i++) {
+            if (buffer.get(i + offset) == '\r') {
                 positionOfBeforeNewLine = i - 1;
                 break;
             }
@@ -74,11 +55,10 @@ public final class CsvReader {
         return positionOfBeforeNewLine;
     }
 
-    private static int findPositionAfterNewLine(final MappedByteBuffer buffer, final int searchingPosition) {
-        buffer.position(searchingPosition);
+    private static int findPositionAfterNewLine(final MappedByteBuffer buffer) {
         int positionAfterNewLine = 0;
         for (int i = 0; i < buffer.limit(); i++) {
-            if (buffer.get() == '\r') {
+            if (buffer.get(i) == '\r') {
                 positionAfterNewLine = i + 2;
                 break;
             }
