@@ -1,18 +1,21 @@
-package org.example.reader;
+package org.example.reader.index;
 
+import org.example.reader.query.TradeQueryInserter;
 import org.example.shared.ConvertedTrade;
+import org.example.shared.DefaultWorkerPool;
+import org.example.shared.interfaces.Reusable;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-public final class TradeIndexingService {
+public final class TradeIndexingService implements Reusable {
 
     private final ConcurrentMap<String, ConvertedTrade> newTrades;
     private final ConcurrentMap<String, ConvertedTrade> amendedTrades;
     private final ConcurrentMap<String, ConvertedTrade> cancelledTrades;
-    private final TradeInserterPool tradeInserterPool;
+    private final DefaultWorkerPool<TradeQueryInserter> tradeInserterPool;
 
-    public TradeIndexingService(final TradeInserterPool tradeInserterPool,
+    public TradeIndexingService(final DefaultWorkerPool<TradeQueryInserter> tradeInserterPool,
                                 final int numberOfProcessors) {
         this.newTrades = new ConcurrentHashMap<>(100000, 0.65F, numberOfProcessors);
         this.amendedTrades = new ConcurrentHashMap<>(100000, 0.65F, numberOfProcessors);
@@ -41,14 +44,22 @@ public final class TradeIndexingService {
 
     public void makeTradesQueryable() {
         for (final ConvertedTrade trade : amendedTrades.values()) {
-            tradeInserterPool.submitTrade(trade);
+            final TradeQueryInserter inserter = tradeInserterPool.get();
+            inserter.addTrade(trade);
         }
         amendedTrades.clear();
         for (final ConvertedTrade trade : newTrades.values()) {
-            tradeInserterPool.submitTrade(trade);
+            final TradeQueryInserter inserter = tradeInserterPool.get();
+            inserter.addTrade(trade);
         }
         newTrades.clear();
         tradeInserterPool.doWork();
     }
 
+    @Override
+    public void clear() {
+        this.newTrades.clear();
+        this.amendedTrades.clear();
+        this.cancelledTrades.clear();
+    }
 }

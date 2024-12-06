@@ -1,15 +1,14 @@
 package org.example.engine;
 
-import org.example.shared.Action;
-import org.example.shared.ConvertedTrade;
+import org.example.shared.*;
 import org.example.shared.Currency;
-import org.example.shared.Side;
+import org.example.shared.interfaces.Reusable;
 
 import java.math.BigDecimal;
 import java.util.*;
 import java.util.concurrent.*;
 
-public final class TradeQueryingService {
+public final class TradeQueryingService implements Reusable {
 
     private final ConcurrentMap<String, ConvertedTrade> tradesById;
     private final ConcurrentMap<String, ConcurrentLinkedQueue<ConvertedTrade>> tradesByBggCode;
@@ -134,6 +133,7 @@ public final class TradeQueryingService {
         return pnlByBggCode.get(bggCode);
     }
 
+    @Override
     public void clear() {
         this.tradesById.clear();
         this.tradesByBggCode.clear();

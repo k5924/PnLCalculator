@@ -1,16 +1,14 @@
-package org.example.reader;
+package org.example.reader.parse;
 
-import org.example.shared.Action;
-import org.example.shared.ConvertedTrade;
-import org.example.shared.Currency;
-import org.example.shared.Side;
+import org.example.shared.*;
+import org.example.shared.interfaces.Reusable;
 
 import java.math.BigDecimal;
 import java.nio.MappedByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
-public final class Trade {
+public final class Trade implements Reusable {
 
     private MappedByteBuffer slice;
     private int offset;
@@ -38,10 +36,14 @@ public final class Trade {
         final String user = extractString(10);
         final String tradeTime = extractString(11);
         final String valueDate = extractString(12);
-        Arrays.fill(startPositions, 0);
-        Arrays.fill(wordLengths, 0);
         return new ConvertedTrade(tradeId, bggCode, currency, side, price, volume, portfolio, action, account,
                 strategy, user, tradeTime, valueDate);
+    }
+
+    @Override
+    public void clear() {
+        Arrays.fill(startPositions, 0);
+        Arrays.fill(wordLengths, 0);
     }
 
     private String extractString(final int index) {

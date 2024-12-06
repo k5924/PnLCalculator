@@ -1,4 +1,7 @@
-package org.example.reader;
+package org.example.reader.file;
+
+import org.example.reader.index.Indexer;
+import org.example.shared.DefaultWorkerPool;
 
 import java.io.RandomAccessFile;
 import java.nio.MappedByteBuffer;
@@ -6,10 +9,10 @@ import java.nio.channels.FileChannel;
 
 public final class CsvReader {
 
-    private final WorkerPool workerPool;
+    private final DefaultWorkerPool<Indexer> workerPool;
     private final int numberOfProcessors;
 
-    public CsvReader(final WorkerPool workerPool,
+    public CsvReader(final DefaultWorkerPool<Indexer> workerPool,
                      final int numberOfProcessors) {
         this.workerPool = workerPool;
         this.numberOfProcessors = numberOfProcessors;
@@ -29,13 +32,15 @@ public final class CsvReader {
                 final int positionBeforeNewLine = findPositionBeforeNewLine(initialBuffer, positionToSearchFrom);
                 final int positionToSliceAt = positionToSearchFrom + positionBeforeNewLine;
                 final int length = positionToSliceAt - startPos;
-                final Worker worker = workerPool.get();
-                worker.setData(initialBuffer, startPos, length);
+                final Indexer indexer = workerPool.get();
+                indexer.clear();
+                indexer.setData(initialBuffer, startPos, length);
                 startPos += length + 3;
             }
             final int length = initialBuffer.limit() - startPos;
-            final Worker worker = workerPool.get();
-            worker.setData(initialBuffer, startPos, length);
+            final Indexer indexer = workerPool.get();
+            indexer.clear();
+            indexer.setData(initialBuffer, startPos, length);
 
             workerPool.doWork();
 

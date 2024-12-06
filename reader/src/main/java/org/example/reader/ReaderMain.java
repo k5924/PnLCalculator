@@ -1,6 +1,11 @@
 package org.example.reader;
 
 import org.example.engine.TradeQueryingService;
+import org.example.reader.file.CsvReader;
+import org.example.reader.index.Indexer;
+import org.example.reader.index.TradeIndexingService;
+import org.example.reader.query.TradeQueryInserter;
+import org.example.shared.DefaultWorkerPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,15 +31,16 @@ final class ReaderMain {
         long elapsed = 0;
         final int numberOfProcessors = Runtime.getRuntime().availableProcessors();
         final TradeQueryingService tradeQueryingService = new TradeQueryingService(numberOfProcessors);
-        final TradeInserterPool tradeInserterPool = new TradeInserterPool(numberOfProcessors, tradeQueryingService);
-        final TradeIndexingService tradeIndexingService = new TradeIndexingService(tradeInserterPool, numberOfProcessors);
-        final WorkerPool workerPool = new WorkerPool(tradeIndexingService, numberOfProcessors);
-        final CsvReader reader = new CsvReader(workerPool, numberOfProcessors);
+        final DefaultWorkerPool<TradeQueryInserter> tradeQueryInserterPool = new DefaultWorkerPool<>(numberOfProcessors, () -> new TradeQueryInserter(tradeQueryingService));
+        final TradeIndexingService tradeIndexingService = new TradeIndexingService(tradeQueryInserterPool, numberOfProcessors);
+        final DefaultWorkerPool<Indexer> indexerPool = new DefaultWorkerPool<>(numberOfProcessors, () -> new Indexer(tradeIndexingService));
+        final CsvReader reader = new CsvReader(indexerPool, numberOfProcessors);
         for (int i = 0; i < 100; i++) {
             final long start = Clock.systemUTC().millis();
             reader.readFile(filePath);
             tradeIndexingService.finishProcessingTrades();
             tradeIndexingService.makeTradesQueryable();
+            tradeIndexingService.clear();
             tradeQueryingService.clear();
             final long end = Clock.systemUTC().millis();
             final long time = end - start;

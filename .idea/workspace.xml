@@ -5,15 +5,20 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d4cbb71b-800e-44fc-ac55-d78e368a6dbc" name="Changes" comment="########50 characters############################&#10;Subject: &#10;&#10;########72 characters##################################################&#10;Problem:&#10;&#10;# Problem, Task, Reason for Commit&#10;&#10;Solution:&#10;&#10;# Solution or List of Changes&#10;&#10;Note:&#10;&#10;# Special instructions, testing steps, rake, etc">
-      <change afterPath="$PROJECT_DIR$/reader/src/main/java/org/example/reader/ConvertedTrade.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/reader/src/main/java/org/example/reader/Trade.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/reader/src/main/java/org/example/reader/TradeIndexingService.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/reader/src/main/java/org/example/reader/Worker.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/shared/src/main/java/org/example/shared/interfaces/ObjectPool.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/shared/src/main/java/org/example/shared/interfaces/Reusable.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/shared/src/main/java/org/example/shared/interfaces/Worker.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/gradle.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/gradle.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/reader/src/main/java/org/example/reader/CsvReader.java" beforeDir="false" afterPath="$PROJECT_DIR$/reader/src/main/java/org/example/reader/CsvReader.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/reader/src/main/java/org/example/reader/LineProcessor.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/engine/src/main/java/org/example/engine/TradeQueryingService.java" beforeDir="false" afterPath="$PROJECT_DIR$/engine/src/main/java/org/example/engine/TradeQueryingService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/reader/src/main/java/org/example/reader/CsvReader.java" beforeDir="false" afterPath="$PROJECT_DIR$/reader/src/main/java/org/example/reader/file/CsvReader.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/reader/src/main/java/org/example/reader/ReaderMain.java" beforeDir="false" afterPath="$PROJECT_DIR$/reader/src/main/java/org/example/reader/ReaderMain.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/settings.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/settings.gradle" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/reader/src/main/java/org/example/reader/Trade.java" beforeDir="false" afterPath="$PROJECT_DIR$/reader/src/main/java/org/example/reader/parse/Trade.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/reader/src/main/java/org/example/reader/TradeIndexingService.java" beforeDir="false" afterPath="$PROJECT_DIR$/reader/src/main/java/org/example/reader/index/TradeIndexingService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/reader/src/main/java/org/example/reader/TradeInserterPool.java" beforeDir="false" afterPath="$PROJECT_DIR$/reader/src/main/java/org/example/reader/query/TradeInserterPool.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/reader/src/main/java/org/example/reader/TradeQueryInserter.java" beforeDir="false" afterPath="$PROJECT_DIR$/reader/src/main/java/org/example/reader/query/TradeQueryInserter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/reader/src/main/java/org/example/reader/Worker.java" beforeDir="false" afterPath="$PROJECT_DIR$/reader/src/main/java/org/example/reader/index/Indexer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/reader/src/main/java/org/example/reader/WorkerPool.java" beforeDir="false" afterPath="$PROJECT_DIR$/reader/src/main/java/org/example/reader/index/WorkerPool.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -68,9 +73,9 @@
     <option name="RECENT_TEMPLATES">
       <list>
         <option value="Enum" />
-        <option value="Interface" />
         <option value="Record" />
         <option value="Class" />
+        <option value="Interface" />
       </list>
     </option>
   </component>
@@ -205,9 +210,9 @@
     <breakpoint-manager>
       <breakpoints>
         <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/reader/src/main/java/org/example/reader/TradeIndexingService.java</url>
-          <line>28</line>
-          <option name="timeStamp" value="24" />
+          <url>file://$PROJECT_DIR$/engine/src/main/java/org/example/engine/TradeQueryingService.java</url>
+          <line>137</line>
+          <option name="timeStamp" value="28" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>

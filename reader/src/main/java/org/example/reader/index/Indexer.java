@@ -1,10 +1,14 @@
-package org.example.reader;
+package org.example.reader.index;
 
+import org.example.reader.parse.Trade;
 import org.example.shared.ConvertedTrade;
+import org.example.shared.interfaces.Reusable;
+import org.example.shared.interfaces.Worker;
 
 import java.nio.MappedByteBuffer;
+import java.util.Arrays;
 
-public final class Worker {
+public final class Indexer implements Reusable, Worker {
 
     private final TradeIndexingService tradeIndexingService;
     private final int[] startPositions;
@@ -16,7 +20,7 @@ public final class Worker {
     private int startOfWord = 0;
     private int currentIndexInArrs = 0;
 
-    public Worker(final TradeIndexingService tradeIndexingService) {
+    public Indexer(final TradeIndexingService tradeIndexingService) {
         this.tradeIndexingService = tradeIndexingService;
         this.startPositions = new int[13];
         this.lengths = new int[13];
@@ -29,12 +33,11 @@ public final class Worker {
         this.slice = slice;
         this.offset = offset;
         this.lengthToSearch = lengthToSearch;
-        startOfWord = 0;
-        currentIndexInArrs = 0;
         trade.setData(slice, offset, startPositions, lengths);
     }
 
-    public void processSlice() {
+    @Override
+    public void doWork() {
         for (int i = 0; i < lengthToSearch; i++) {
             final char c = (char) slice.get(i + offset);
             if (c == '\r') {
@@ -42,6 +45,7 @@ public final class Worker {
                 final int length = i - startOfWord;
                 lengths[currentIndexInArrs] = length;
                 final ConvertedTrade convertedTrade = trade.convert();
+                trade.clear();
                 startOfWord = i + 2;
                 tradeIndexingService.indexTrade(convertedTrade);
                 currentIndexInArrs = 0;
@@ -58,6 +62,15 @@ public final class Worker {
         final int length = lengthToSearch - startOfWord;
         lengths[currentIndexInArrs] = length;
         final ConvertedTrade convertedTrade = trade.convert();
+        trade.clear();
         tradeIndexingService.indexTrade(convertedTrade);
+    }
+
+    @Override
+    public void clear() {
+        startOfWord = 0;
+        currentIndexInArrs = 0;
+        Arrays.fill(startPositions, 0);
+        Arrays.fill(lengths, 0);
     }
 }

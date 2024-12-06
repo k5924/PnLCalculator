@@ -1,12 +1,13 @@
-package org.example.reader;
+package org.example.reader.query;
 
 import org.example.engine.TradeQueryingService;
 import org.example.shared.ConvertedTrade;
+import org.example.shared.interfaces.Worker;
 
 import java.util.ArrayDeque;
 import java.util.Queue;
 
-public final class TradeQueryInserter {
+public final class TradeQueryInserter implements Worker {
 
     private final TradeQueryingService tradeQueryingService;
     private final Queue<ConvertedTrade> trades;
@@ -20,7 +21,8 @@ public final class TradeQueryInserter {
         trades.offer(trade);
     }
 
-    public void send() {
+    @Override
+    public void doWork() {
         for (int i = 0; i < trades.size(); i++) {
             final ConvertedTrade trade = trades.poll();
             tradeQueryingService.makeTradeQueryable(trade);
