@@ -11,24 +11,37 @@ import java.util.function.Supplier;
 
 public final class DefaultWorkerPool<T extends Worker> implements ObjectPool<T> {
 
-    private final T[] workers;
-    private final Future<?>[] futures;
-    private final int numberOfWorkers;
+    private final Supplier<T> workerFactory;
+    private final int numberOfThreads;
+    private T[] workers;
+    private Future<?>[] futures;
+    private int numberOfWorkers;
     private int currentPosition = 0;
 
-    public DefaultWorkerPool(final int numberOfWorkers,
-                             final Supplier<T> workerFactory) {
-        this.numberOfWorkers = numberOfWorkers;
-        this.futures = new Future[numberOfWorkers];
-        this.workers = (T[]) new Worker[numberOfWorkers];
-        for (int i = 0; i < numberOfWorkers; i++) {
+    public DefaultWorkerPool(final Supplier<T> workerFactory,
+                             final int numberOfThreads) {
+        this.workerFactory = workerFactory;
+        this.numberOfThreads = numberOfThreads;
+    }
+
+    public DefaultWorkerPool<T> setNumberOfWorkers(final int numberOfWorkers) {
+        this.numberOfWorkers = Math.min(numberOfWorkers, numberOfThreads);
+        this.futures = new Future[this.numberOfWorkers];
+        this.workers = (T[]) new Worker[this.numberOfWorkers];
+        for (int i = 0; i < this.numberOfWorkers; i++) {
             workers[i] = workerFactory.get();
         }
+        return this;
     }
 
     @Override
     public T get() {
-        return workers[currentPosition++ % numberOfWorkers];
+        return get(currentPosition++);
+    }
+
+    @Override
+    public T get(final int hashCode) {
+        return workers[Math.abs(hashCode % numberOfWorkers)];
     }
 
     @Override

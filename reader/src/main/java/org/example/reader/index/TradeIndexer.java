@@ -1,21 +1,20 @@
-package org.example.reader.query;
+package org.example.reader.index;
 
 import org.example.shared.ConvertedTrade;
 import org.example.shared.interfaces.Reusable;
 import org.example.shared.interfaces.Worker;
 
 import java.util.ArrayDeque;
-import java.util.function.Consumer;
+import java.util.Queue;
 
-public final class TradeQueryInserter implements Reusable, Worker {
+public final class TradeIndexer implements Reusable, Worker {
 
-    private final Consumer<ConvertedTrade> tradeConsumer;
-    private final ArrayDeque<ConvertedTrade> trades;
+    private final Queue<ConvertedTrade> trades;
+    private final TradeIndexingService tradeIndexingService;
 
-
-    public TradeQueryInserter(final Consumer<ConvertedTrade> tradeConsumer) {
-        this.tradeConsumer = tradeConsumer;
+    public TradeIndexer(final TradeIndexingService tradeIndexingService) {
         this.trades = new ArrayDeque<>(100000);
+        this.tradeIndexingService = tradeIndexingService;
     }
 
     public void addTrade(final ConvertedTrade trade) {
@@ -30,7 +29,7 @@ public final class TradeQueryInserter implements Reusable, Worker {
             if (trade == null) {
                 break;
             }
-            tradeConsumer.accept(trade);
+            tradeIndexingService.indexTrade(trade);
         }
     }
 
@@ -38,5 +37,4 @@ public final class TradeQueryInserter implements Reusable, Worker {
     public void clear() {
         this.trades.clear();
     }
-
 }

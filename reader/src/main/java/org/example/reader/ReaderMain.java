@@ -2,14 +2,12 @@ package org.example.reader;
 
 import org.example.engine.TradeQueryingService;
 import org.example.reader.file.CsvReader;
-import org.example.reader.index.Indexer;
+import org.example.reader.index.LineProcessor;
+import org.example.reader.index.TradeIndexSharder;
 import org.example.reader.index.TradeIndexingService;
-import org.example.reader.query.TradeQueryInserter;
 import org.example.shared.DefaultWorkerPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.time.Clock;
 
 final class ReaderMain {
 
@@ -26,28 +24,43 @@ final class ReaderMain {
             LOG.debug("file path is {}", filePath);
         }
 
-        long min = Long.MAX_VALUE;
-        long max = Long.MIN_VALUE;
-        long elapsed = 0;
         final int numberOfProcessors = Runtime.getRuntime().availableProcessors();
         final TradeQueryingService tradeQueryingService = new TradeQueryingService(numberOfProcessors);
-        final DefaultWorkerPool<TradeQueryInserter> tradeQueryInserterPool = new DefaultWorkerPool<>(numberOfProcessors, () -> new TradeQueryInserter(tradeQueryingService));
-        final TradeIndexingService tradeIndexingService = new TradeIndexingService(tradeQueryInserterPool, numberOfProcessors);
-        final DefaultWorkerPool<Indexer> indexerPool = new DefaultWorkerPool<>(numberOfProcessors, () -> new Indexer(tradeIndexingService));
-        final CsvReader reader = new CsvReader(indexerPool, numberOfProcessors);
-        for (int i = 0; i < 100; i++) {
-            final long start = Clock.systemUTC().millis();
-            reader.readFile(filePath);
-            tradeIndexingService.finishProcessingTrades();
-            tradeIndexingService.makeTradesQueryable();
-            tradeIndexingService.clear();
-            tradeQueryingService.clear();
-            final long end = Clock.systemUTC().millis();
-            final long time = end - start;
-            elapsed += time;
-            min = Math.min(time, min);
-            max = Math.max(time, max);
+        final TradeIndexingService tradeIndexingService = new TradeIndexingService(tradeQueryingService, numberOfProcessors);
+        final TradeIndexSharder tradeIndexSharder = new TradeIndexSharder(tradeIndexingService, numberOfProcessors);
+        final DefaultWorkerPool<LineProcessor> lineProcessingPool = new DefaultWorkerPool<>(() -> new LineProcessor(tradeIndexSharder), numberOfProcessors)
+                .setNumberOfWorkers(numberOfProcessors);
+        final CsvReader reader = new CsvReader(lineProcessingPool, numberOfProcessors);
+        final int numberOfRuns = 100;
+        final Observer overallObserver = new Observer("total run", numberOfRuns);
+        final Observer readerObserver = new Observer("reading file", numberOfRuns);
+        final Observer lineProcessingObserver = new Observer("processing lines", numberOfRuns);
+        final Observer shardTradesObserver = new Observer("shard trades", numberOfRuns);
+        final Observer tradeCleaner = new Observer("clean trades", numberOfRuns);
+        final Observer makeTradeQueryable = new Observer("make queryable", numberOfRuns);
+        final Observer clearSharder = new Observer("clear sharder", numberOfRuns);
+        final Observer clearIndexer = new Observer("clear indexer", numberOfRuns);
+        final Observer clearQueryer = new Observer("clear queryer", numberOfRuns);
+        for (int i = 0; i < numberOfRuns; i++) {
+            overallObserver.observe(() -> {
+                readerObserver.observe(() -> reader.readFile(filePath));
+                lineProcessingObserver.observe(lineProcessingPool::doWork);
+                shardTradesObserver.observe(tradeIndexSharder::doWork);
+                tradeCleaner.observe(tradeIndexingService::finishProcessingTrades);
+                makeTradeQueryable.observe(tradeIndexingService::makeTradesQueryable);
+                clearSharder.observe(tradeIndexSharder::clear);
+                clearIndexer.observe(tradeIndexingService::clear);
+                clearQueryer.observe(tradeQueryingService::clear);
+            });
         }
-        LOG.info("average elapsed time over 100 runs is {}ms, min was {}ms, max was {}ms", elapsed / 100, min, max);
+        LOG.info("{}", overallObserver);
+        LOG.info("{}", readerObserver);
+        LOG.info("{}", lineProcessingObserver);
+        LOG.info("{}", shardTradesObserver);
+        LOG.info("{}", tradeCleaner);
+        LOG.info("{}", makeTradeQueryable);
+        LOG.info("{}", clearSharder);
+        LOG.info("{}", clearIndexer);
+        LOG.info("{}", clearQueryer);
     }
 }

@@ -1,6 +1,6 @@
 package org.example.reader.file;
 
-import org.example.reader.index.Indexer;
+import org.example.reader.index.LineProcessor;
 import org.example.shared.DefaultWorkerPool;
 
 import java.io.RandomAccessFile;
@@ -9,10 +9,10 @@ import java.nio.channels.FileChannel;
 
 public final class CsvReader {
 
-    private final DefaultWorkerPool<Indexer> workerPool;
+    private final DefaultWorkerPool<LineProcessor> workerPool;
     private final int numberOfProcessors;
 
-    public CsvReader(final DefaultWorkerPool<Indexer> workerPool,
+    public CsvReader(final DefaultWorkerPool<LineProcessor> workerPool,
                      final int numberOfProcessors) {
         this.workerPool = workerPool;
         this.numberOfProcessors = numberOfProcessors;
@@ -32,18 +32,15 @@ public final class CsvReader {
                 final int positionBeforeNewLine = findPositionBeforeNewLine(initialBuffer, positionToSearchFrom);
                 final int positionToSliceAt = positionToSearchFrom + positionBeforeNewLine;
                 final int length = positionToSliceAt - startPos;
-                final Indexer indexer = workerPool.get();
-                indexer.clear();
-                indexer.setData(initialBuffer, startPos, length);
+                final LineProcessor lineProcessor = workerPool.get();
+                lineProcessor.clear();
+                lineProcessor.setData(initialBuffer, startPos, length);
                 startPos += length + 3;
             }
             final int length = initialBuffer.limit() - startPos;
-            final Indexer indexer = workerPool.get();
-            indexer.clear();
-            indexer.setData(initialBuffer, startPos, length);
-
-            workerPool.doWork();
-
+            final LineProcessor lineProcessor = workerPool.get();
+            lineProcessor.clear();
+            lineProcessor.setData(initialBuffer, startPos, length);
         } catch (final Exception e) {
             e.printStackTrace();
         }

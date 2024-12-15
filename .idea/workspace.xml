@@ -5,20 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d4cbb71b-800e-44fc-ac55-d78e368a6dbc" name="Changes" comment="########50 characters############################&#10;Subject: &#10;&#10;########72 characters##################################################&#10;Problem:&#10;&#10;# Problem, Task, Reason for Commit&#10;&#10;Solution:&#10;&#10;# Solution or List of Changes&#10;&#10;Note:&#10;&#10;# Special instructions, testing steps, rake, etc">
-      <change afterPath="$PROJECT_DIR$/shared/src/main/java/org/example/shared/interfaces/ObjectPool.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/shared/src/main/java/org/example/shared/interfaces/Reusable.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/shared/src/main/java/org/example/shared/interfaces/Worker.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/gradle.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/gradle.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/engine/src/main/java/org/example/engine/TradeQueryingService.java" beforeDir="false" afterPath="$PROJECT_DIR$/engine/src/main/java/org/example/engine/TradeQueryingService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/reader/src/main/java/org/example/reader/CsvReader.java" beforeDir="false" afterPath="$PROJECT_DIR$/reader/src/main/java/org/example/reader/file/CsvReader.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/reader/src/main/java/org/example/reader/ReaderMain.java" beforeDir="false" afterPath="$PROJECT_DIR$/reader/src/main/java/org/example/reader/ReaderMain.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/reader/src/main/java/org/example/reader/Trade.java" beforeDir="false" afterPath="$PROJECT_DIR$/reader/src/main/java/org/example/reader/parse/Trade.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/reader/src/main/java/org/example/reader/TradeIndexingService.java" beforeDir="false" afterPath="$PROJECT_DIR$/reader/src/main/java/org/example/reader/index/TradeIndexingService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/reader/src/main/java/org/example/reader/TradeInserterPool.java" beforeDir="false" afterPath="$PROJECT_DIR$/reader/src/main/java/org/example/reader/query/TradeInserterPool.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/reader/src/main/java/org/example/reader/TradeQueryInserter.java" beforeDir="false" afterPath="$PROJECT_DIR$/reader/src/main/java/org/example/reader/query/TradeQueryInserter.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/reader/src/main/java/org/example/reader/Worker.java" beforeDir="false" afterPath="$PROJECT_DIR$/reader/src/main/java/org/example/reader/index/Indexer.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/reader/src/main/java/org/example/reader/WorkerPool.java" beforeDir="false" afterPath="$PROJECT_DIR$/reader/src/main/java/org/example/reader/index/WorkerPool.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -100,24 +87,24 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;Application.ReaderMain.executor&quot;: &quot;Coverage&quot;,
-    &quot;Gradle.Build PnLCalculator.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.PnLCalculator [:ReaderMain.main()].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.PnLCalculator [dependencies].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.PnLCalculator [runApp].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.PnLCalculator:reader [:reader:ReaderMain.main()].executor&quot;: &quot;Run&quot;,
-    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;rewrite&quot;,
-    &quot;jdk.selected.JAVA_MODULE&quot;: &quot;temurin-21&quot;,
-    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;/home/tr1x/Documents/Learning/programming/PnLCalculator/engine/src/main/resources&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;promo.profiler&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Application.ReaderMain.executor": "Coverage",
+    "Gradle.Build PnLCalculator.executor": "Run",
+    "Gradle.PnLCalculator [:ReaderMain.main()].executor": "Run",
+    "Gradle.PnLCalculator [dependencies].executor": "Run",
+    "Gradle.PnLCalculator [runApp].executor": "Run",
+    "Gradle.PnLCalculator:reader [:reader:ReaderMain.main()].executor": "Run",
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "git-widget-placeholder": "rewrite",
+    "jdk.selected.JAVA_MODULE": "temurin-21",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "/home/tr1x/Documents/Learning/programming/PnLCalculator/engine/src/main/resources",
+    "settings.editor.selected.configurable": "promo.profiler"
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$/engine/src/main/resources" />

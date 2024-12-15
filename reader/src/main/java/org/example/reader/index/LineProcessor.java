@@ -8,9 +8,9 @@ import org.example.shared.interfaces.Worker;
 import java.nio.MappedByteBuffer;
 import java.util.Arrays;
 
-public final class Indexer implements Reusable, Worker {
+public final class LineProcessor implements Reusable, Worker {
 
-    private final TradeIndexingService tradeIndexingService;
+    private final TradeIndexSharder tradeIndexSharder;
     private final int[] startPositions;
     private final int[] lengths;
     private final Trade trade;
@@ -20,8 +20,8 @@ public final class Indexer implements Reusable, Worker {
     private int startOfWord = 0;
     private int currentIndexInArrs = 0;
 
-    public Indexer(final TradeIndexingService tradeIndexingService) {
-        this.tradeIndexingService = tradeIndexingService;
+    public LineProcessor(final TradeIndexSharder tradeIndexSharder) {
+        this.tradeIndexSharder = tradeIndexSharder;
         this.startPositions = new int[13];
         this.lengths = new int[13];
         this.trade = new Trade();
@@ -47,7 +47,7 @@ public final class Indexer implements Reusable, Worker {
                 final ConvertedTrade convertedTrade = trade.convert();
                 trade.clear();
                 startOfWord = i + 2;
-                tradeIndexingService.indexTrade(convertedTrade);
+                tradeIndexSharder.shardTrade(convertedTrade);
                 currentIndexInArrs = 0;
             }
             if (c == ',') {
@@ -63,7 +63,7 @@ public final class Indexer implements Reusable, Worker {
         lengths[currentIndexInArrs] = length;
         final ConvertedTrade convertedTrade = trade.convert();
         trade.clear();
-        tradeIndexingService.indexTrade(convertedTrade);
+        tradeIndexSharder.shardTrade(convertedTrade);
     }
 
     @Override
